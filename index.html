@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hotmello Productions - Admin Panel</title>
+    <title>Hotmello Productions - Admin HQ</title>
     
     <meta name="theme-color" content="#020617">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,92 +11,139 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #020617; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body class="text-slate-100 flex h-screen overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex">
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex z-20">
         <div class="p-6 border-b border-slate-800 flex items-center justify-center">
-            <img src="logo.png" alt="Hotmello Productions" class="h-8 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]">
+            <img src="logo.png" alt="Hotmello Productions" class="h-8 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" onerror="this.outerHTML='<h1 class=\'font-black text-orange-500 text-xl tracking-widest\'>HOTMELLO</h1>'">
         </div>
-        <nav class="flex-1 p-4 space-y-2">
-            <button onclick="showView('eventsView')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-orange-600/10 text-orange-500 font-bold transition hover:bg-slate-800">
-                <i class="fas fa-calendar-alt w-5"></i> Events
+        <nav class="flex-1 p-4 space-y-2 mt-4">
+            <button onclick="switchAdminView('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-orange-600/10 text-orange-500 font-bold transition">
+                <i class="fas fa-chart-pie w-5"></i> Dashboard
             </button>
-            <button onclick="alert('Coming Soon: Crew Management module')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-users w-5"></i> Crew Management
+            <button onclick="switchAdminView('events')" id="nav-events" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
+                <i class="fas fa-calendar-alt w-5"></i> Events Mgmt
             </button>
-            <button onclick="alert('Coming Soon: Financial Reports')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-chart-line w-5"></i> Analytics
+            <button onclick="switchAdminView('crew')" id="nav-crew" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
+                <i class="fas fa-users w-5"></i> Crew & Payroll
+            </button>
+            <button onclick="switchAdminView('inventory')" id="nav-inventory" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
+                <i class="fas fa-boxes w-5"></i> Gear Inventory
             </button>
         </nav>
+        <div class="p-4 border-t border-slate-800 text-center">
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">System Status: Online</p>
+        </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-[#020617] relative">
+        <!-- Abstract Background -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-orange-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+
         <!-- Topbar -->
-        <header class="bg-slate-900/50 backdrop-blur border-b border-slate-800 p-4 flex justify-between items-center z-10">
-            <h2 id="topBarTitle" class="text-xl font-bold text-white">Events Management</h2>
-            <button onclick="openModal('addEventModal')" class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow-[0_0_15px_rgba(234,88,12,0.4)] flex items-center gap-2">
-                <i class="fas fa-plus"></i> New Event
-            </button>
+        <header class="bg-slate-900/40 backdrop-blur-md border-b border-slate-800/50 p-5 flex justify-between items-center z-10 sticky top-0">
+            <h2 id="topBarTitle" class="text-xl font-bold text-white tracking-wide">Overview</h2>
+            <div id="topBarActions"></div>
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto p-6 relative">
+        <div class="flex-1 overflow-y-auto p-6 lg:p-8 relative z-10 scroll-smooth">
             
-            <!-- Events List View -->
-            <div id="eventsView" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="eventsGrid">
-                    <div class="col-span-full text-center py-10 text-slate-500"><i class="fas fa-spinner fa-spin text-3xl mb-3 text-orange-500"></i><br>Loading Events...</div>
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="space-y-6 animate-fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Total Events</p><h3 id="statEvents" class="text-3xl font-black text-white mt-1">--</h3></div>
+                            <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500"><i class="fas fa-calendar-check text-lg"></i></div>
+                        </div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Hours Logged</p><h3 id="statHours" class="text-3xl font-black text-white mt-1">--</h3></div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500"><i class="fas fa-clock text-lg"></i></div>
+                        </div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Active Crew</p><h3 id="statCrew" class="text-3xl font-black text-white mt-1">--</h3></div>
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500"><i class="fas fa-users text-lg"></i></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6 rounded-2xl mt-8">
+                    <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4">Recent Shift Logs</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-400">
+                            <thead class="text-xs uppercase bg-slate-800/50 text-slate-300">
+                                <tr><th class="px-4 py-3 rounded-l-lg">Crew</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Hours</th><th class="px-4 py-3 rounded-r-lg">Status</th></tr>
+                            </thead>
+                            <tbody id="dashLogsTable"><tr><td colspan="4" class="px-4 py-4 text-center">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
+            <!-- Events List View -->
+            <div id="eventsView" class="hidden space-y-6 animate-fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="eventsGrid"></div>
+            </div>
+
             <!-- Single Event Details View -->
-            <div id="eventDetailsView" class="hidden space-y-6">
-                <button onclick="showView('eventsView')" class="text-slate-400 hover:text-white flex items-center gap-2 mb-4 transition">
-                    <i class="fas fa-arrow-left"></i> Back to Events
+            <div id="eventDetailsView" class="hidden space-y-6 animate-fade-in">
+                <button onclick="switchAdminView('events')" class="text-slate-400 hover:text-white flex items-center gap-2 mb-2 transition text-sm font-medium">
+                    <i class="fas fa-arrow-left"></i> All Events
                 </button>
                 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-orange-600/5 rounded-full blur-3xl pointer-events-none"></div>
-                    <h2 id="detailEventName" class="text-3xl font-black text-white mb-2">Event Name</h2>
-                    <p id="detailEventLocation" class="text-slate-400"><i class="fas fa-map-marker-alt mr-2 text-orange-500"></i>Location</p>
-                    
-                    <div class="mt-6 border-t border-slate-800 pt-6">
-                        <h3 class="text-sm font-bold text-orange-400 uppercase tracking-widest mb-3">Assigned Crew</h3>
-                        <div id="detailEventCrew" class="flex flex-wrap gap-2"></div>
+                <div class="glass-card rounded-3xl p-6 lg:p-8 relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <h2 id="detailEventName" class="text-3xl font-black text-white tracking-wide mb-2">Event Name</h2>
+                        <p id="detailEventLocation" class="text-slate-400 font-medium"><i class="fas fa-map-marker-alt mr-2 text-orange-500/80"></i>Location</p>
+                        <div class="mt-4 flex flex-wrap gap-2" id="detailEventCrew"></div>
                     </div>
+                    <button onclick="copyClientPortalLink()" class="relative z-10 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition border border-slate-700 flex items-center gap-2 shadow-lg">
+                        <i class="fas fa-external-link-alt text-orange-500"></i> Copy Client Portal Link
+                    </button>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Shift Logs Column -->
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                            <i class="fas fa-clock text-emerald-500"></i> Shift Logs
-                        </h3>
-                        <div id="eventShiftsList" class="space-y-4">
-                            <div class="text-center py-6 text-slate-500 text-sm">No logs available</div>
-                        </div>
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-800 pb-3"><i class="fas fa-clock text-emerald-500"></i> Shift Records</h3>
+                        <div id="eventShiftsList" class="space-y-3"></div>
                     </div>
 
-                    <!-- Tasks Column -->
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                                <i class="fas fa-tasks text-amber-500"></i> Deliverables & Tasks
-                            </h3>
-                            <button onclick="openModal('addTaskModal')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold transition border border-slate-700">
-                                + Add Task
+                    <div class="glass-card rounded-2xl p-6">
+                        <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-tasks text-amber-500"></i> Deliverables</h3>
+                            <button onclick="openModal('addTaskModal')" class="bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                + Assign Task
                             </button>
                         </div>
-                        <div id="eventTasksList" class="space-y-4">
-                            <div class="text-center py-6 text-slate-500 text-sm">No tasks assigned</div>
-                        </div>
+                        <div id="eventTasksList" class="space-y-4"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Crew Management View -->
+            <div id="crewView" class="hidden space-y-6 animate-fade-in">
+                <div class="glass-card p-6 rounded-2xl">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="crewGrid"></div>
+                </div>
+            </div>
+
+            <!-- Inventory Management View -->
+            <div id="inventoryView" class="hidden space-y-6 animate-fade-in">
+                <div class="glass-card p-6 rounded-2xl">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="inventoryGrid"></div>
                 </div>
             </div>
 
@@ -104,64 +151,84 @@
     </main>
 
     <!-- Modal: Add Event -->
-    <div id="addEventModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                <h3 class="text-lg font-bold text-white">Create New Event</h3>
+    <div id="addEventModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white tracking-wide">Create New Event</h3>
                 <button onclick="closeModal('addEventModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-5 overflow-y-auto">
                 <div>
-                    <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Event Name</label>
-                    <input type="text" id="newEventName" placeholder="e.g. Corporate Summit 2026" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-white focus:border-orange-500 outline-none">
+                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">Event Title</label>
+                    <input type="text" id="newEventName" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white focus:border-orange-500 outline-none transition">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Location</label>
-                    <input type="text" id="newEventLocation" placeholder="e.g. BMICH" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-white focus:border-orange-500 outline-none">
+                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">Location Venue</label>
+                    <input type="text" id="newEventLocation" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white focus:border-orange-500 outline-none transition">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Crew (Comma separated)</label>
-                    <textarea id="newEventCrew" rows="3" placeholder="e.g. Sumudu, Kasun, Nimal" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-white focus:border-orange-500 outline-none"></textarea>
+                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">Assign Crew</label>
+                    <div id="crewSelectionDiv" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-slate-950 border border-slate-800 p-3 rounded-xl"></div>
                 </div>
-                <button onclick="saveEvent()" id="btnSaveEvent" class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-lg font-bold transition shadow-lg mt-2">
-                    Save Event
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">Assign Gear/Equipment</label>
+                    <div id="equipmentSelectionDiv" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-slate-950 border border-slate-800 p-3 rounded-xl"></div>
+                </div>
+            </div>
+            <div class="p-5 border-t border-slate-800 bg-slate-900/50">
+                <button onclick="saveEvent()" id="btnSaveEvent" class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3.5 rounded-xl font-bold transition shadow-lg tracking-wide">
+                    Create Event
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Add Task -->
-    <div id="addTaskModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Modal: Add Task, Add Crew, Add Inventory (Simplified HTML structure to save space) -->
+    <!-- Add Task -->
+    <div id="addTaskModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                <h3 class="text-lg font-bold text-white">Assign New Task</h3>
-                <button onclick="closeModal('addTaskModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times text-xl"></i></button>
-            </div>
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Assign Task</h3><button onclick="closeModal('addTaskModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
             <div class="p-6 space-y-4">
-                <div>
-                    <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Task Title</label>
-                    <input type="text" id="newTaskTitle" placeholder="e.g. Edit Wedding Trailer" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-white focus:border-orange-500 outline-none">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Description</label>
-                    <textarea id="newTaskDesc" rows="3" placeholder="Include special requirements..." class="w-full bg-slate-950 border border-slate-800 p-3 rounded-lg text-white focus:border-orange-500 outline-none"></textarea>
-                </div>
-                <button onclick="saveTask()" id="btnSaveTask" class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-lg font-bold transition shadow-lg mt-2">
-                    Add Task
-                </button>
+                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Title</label><input type="text" id="newTaskTitle" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-orange-500"></div>
+                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Details</label><textarea id="newTaskDesc" rows="3" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-orange-500"></textarea></div>
+                <button onclick="saveTask()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold mt-2 hover:bg-orange-500">Add Task</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Crew -->
+    <div id="addCrewModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Crew Member</h3><button onclick="closeModal('addCrewModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Name</label><input type="text" id="newCrewName" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-blue-500"></div>
+                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Primary Role (e.g. Photographer)</label><input type="text" id="newCrewRole" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-blue-500"></div>
+                <button onclick="saveCrew()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-2 hover:bg-blue-500">Save Crew</button>
             </div>
         </div>
     </div>
 
-    <!-- Image Viewer Modal -->
+    <!-- Add Inventory -->
+    <div id="addInventoryModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Gear</h3><button onclick="closeModal('addInventoryModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Item Name / Model</label><input type="text" id="newInvName" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
+                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Serial / ID Tag</label><input type="text" id="newInvTag" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
+                <button onclick="saveInventory()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mt-2 hover:bg-emerald-500">Save Gear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Viewer -->
     <div id="imageViewerModal" class="hidden fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4">
         <button onclick="closeModal('imageViewerModal')" class="absolute top-6 right-6 text-white text-3xl hover:text-rose-500 transition"><i class="fas fa-times"></i></button>
-        <img id="viewerImage" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+        <img id="viewerImage" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-slate-800">
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -177,226 +244,297 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        // Initialize Auth to prevent permission issues
         signInAnonymously(auth).catch(console.error);
 
         let activeEventId = null;
+        let globalCrewList = [];
+        let globalInventoryList = [];
 
         // UI Routing
-        window.showView = (viewId) => {
-            document.getElementById('eventsView').classList.add('hidden');
-            document.getElementById('eventDetailsView').classList.add('hidden');
+        window.switchAdminView = (viewId) => {
+            ['dashboardView', 'eventsView', 'eventDetailsView', 'crewView', 'inventoryView'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            ['dashboard', 'events', 'crew', 'inventory'].forEach(v => {
+                const btn = document.getElementById(`nav-${v}`);
+                if(btn) {
+                    btn.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white";
+                }
+            });
+
             document.getElementById(viewId).classList.remove('hidden');
+            
+            let activeNav = viewId.replace('View', '');
+            if(activeNav === 'eventDetails') activeNav = 'events';
+            const navBtn = document.getElementById(`nav-${activeNav}`);
+            if(navBtn) {
+                const colors = { 'dashboard': 'orange', 'events': 'orange', 'crew': 'blue', 'inventory': 'emerald' };
+                const c = colors[activeNav];
+                navBtn.className = `w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-${c}-600/10 text-${c}-500 font-bold transition`;
+            }
+
+            const titles = { 'dashboardView': 'System Overview', 'eventsView': 'Events Management', 'crewView': 'Crew Directory', 'inventoryView': 'Gear Inventory' };
+            if(titles[viewId]) document.getElementById('topBarTitle').innerText = titles[viewId];
+
+            const topActions = document.getElementById('topBarActions');
+            topActions.innerHTML = "";
+            if(viewId === 'eventsView') topActions.innerHTML = `<button onclick="prepareEventModal()" class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-plus"></i> New Event</button>`;
+            if(viewId === 'crewView') topActions.innerHTML = `<button onclick="openModal('addCrewModal')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Crew</button>`;
+            if(viewId === 'inventoryView') topActions.innerHTML = `<button onclick="openModal('addInventoryModal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-box-open"></i> Add Gear</button>`;
+
+            if(viewId === 'dashboardView') loadDashboard();
             if(viewId === 'eventsView') loadEvents();
+            if(viewId === 'crewView') loadCrew();
+            if(viewId === 'inventoryView') loadInventory();
         };
 
         window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
         window.closeModal = (id) => {
             document.getElementById(id).classList.add('hidden');
-            if(id === 'addEventModal') { document.getElementById('newEventName').value = ''; document.getElementById('newEventLocation').value = ''; document.getElementById('newEventCrew').value = ''; }
-            if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value = ''; document.getElementById('newTaskDesc').value = ''; }
+            if(id === 'addEventModal') { document.getElementById('newEventName').value=''; document.getElementById('newEventLocation').value=''; }
+            if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value=''; document.getElementById('newTaskDesc').value=''; }
         };
+        window.viewImage = (src) => { if(src) { document.getElementById('viewerImage').src = src; openModal('imageViewerModal'); } };
 
-        window.viewImage = (src) => {
-            if(!src) return;
-            document.getElementById('viewerImage').src = src;
-            openModal('imageViewerModal');
-        };
-
-        // 1. Load Events
-        async function loadEvents() {
-            const grid = document.getElementById('eventsGrid');
+        // --- Core Data Loaders ---
+        async function fetchGlobalData() {
             try {
-                const snap = await getDocs(collection(db, "events"));
+                const cSnap = await getDocs(collection(db, "crew"));
+                globalCrewList = []; cSnap.forEach(d => globalCrewList.push({id: d.id, ...d.data()}));
+                
+                const iSnap = await getDocs(collection(db, "inventory"));
+                globalInventoryList = []; iSnap.forEach(d => globalInventoryList.push({id: d.id, ...d.data()}));
+            } catch(e) { console.error("Global data fetch err", e); }
+        }
+
+        // --- Dashboard ---
+        async function loadDashboard() {
+            try {
+                const eSnap = await getDocs(collection(db, "events"));
+                document.getElementById('statEvents').innerText = eSnap.size;
+                
+                await fetchGlobalData();
+                document.getElementById('statCrew').innerText = globalCrewList.length;
+
+                const sSnap = await getDocs(query(collection(db, "shift_logs"), orderBy("timestamp", "desc"), limit(5)));
+                let totalH = 0; let logRows = "";
+                
+                // Note: Getting total hours properly requires aggregating all logs, doing limited for demo
+                const allLogs = await getDocs(collection(db, "shift_logs"));
+                allLogs.forEach(d => totalH += (d.data().hours || 0));
+                document.getElementById('statHours').innerText = Math.round(totalH);
+
+                if(sSnap.empty) logRows = `<tr><td colspan="4" class="px-4 py-4 text-center text-slate-500">No logs found</td></tr>`;
+                sSnap.forEach(d => {
+                    const data = d.data();
+                    logRows += `<tr class="border-b border-slate-800/50 hover:bg-slate-800/30 transition">
+                        <td class="px-4 py-3 font-medium text-white">${data.crewName}</td>
+                        <td class="px-4 py-3 text-slate-400 truncate max-w-[150px]">${data.eventName}</td>
+                        <td class="px-4 py-3 text-emerald-400 font-medium">${data.hours}h</td>
+                        <td class="px-4 py-3"><span class="text-[10px] uppercase font-bold bg-slate-800 px-2 py-1 rounded">${data.status}</span></td>
+                    </tr>`;
+                });
+                document.getElementById('dashLogsTable').innerHTML = logRows;
+            } catch(e) { console.error(e); }
+        }
+
+        // --- Events ---
+        async function loadEvents() {
+            const grid = document.getElementById('eventsGrid'); grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-500"><i class="fas fa-spinner fa-spin"></i></div>';
+            try {
+                const snap = await getDocs(query(collection(db, "events"), orderBy("createdAt", "desc")));
                 grid.innerHTML = "";
-                if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-slate-500">No events found.</div>'; return; }
-                
-                let events = [];
-                snap.forEach(d => events.push({id: d.id, ...d.data()}));
-                
-                // Sort by creation time (newest first) if available
-                events.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-                
-                events.forEach(e => {
+                if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-slate-500 bg-slate-900/50 p-10 rounded-2xl border border-slate-800 border-dashed">No events found.</div>'; return; }
+                snap.forEach(d => {
+                    const e = {id: d.id, ...d.data()};
                     const card = document.createElement('div');
-                    card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-orange-500/50 transition cursor-pointer group shadow-lg";
+                    card.className = "glass-card rounded-2xl p-6 hover:border-orange-500/40 transition cursor-pointer group";
                     card.onclick = () => openEventDetails(e);
                     card.innerHTML = `
-                        <div class="w-12 h-12 bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition"><i class="fas fa-calendar-check"></i></div>
-                        <h3 class="text-xl font-bold text-white mb-1">${e.name}</h3>
-                        <p class="text-sm text-slate-400 mb-4"><i class="fas fa-map-marker-alt mr-1"></i>${e.location || 'N/A'}</p>
-                        <div class="flex items-center gap-2 text-xs text-slate-500 font-bold uppercase"><i class="fas fa-users"></i> ${e.assignedCrew ? e.assignedCrew.length : 0} Crew Members</div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-orange-500 group-hover:text-white transition"><i class="fas fa-calendar-check"></i></div>
+                            <i class="fas fa-chevron-right text-slate-600 group-hover:text-orange-500 transition mt-2"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-1 truncate">${e.name}</h3>
+                        <p class="text-sm text-slate-400 mb-5 truncate"><i class="fas fa-map-marker-alt mr-2 opacity-70"></i>${e.location || 'N/A'}</p>
+                        <div class="flex gap-2">
+                            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border border-slate-700"><i class="fas fa-users mr-1"></i> ${e.assignedCrew?e.assignedCrew.length:0} Crew</span>
+                            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border border-slate-700"><i class="fas fa-boxes mr-1"></i> ${e.equipment?e.equipment.length:0} Gear</span>
+                        </div>
                     `;
                     grid.appendChild(card);
                 });
-            } catch (err) { console.error(err); grid.innerHTML = `<div class="text-rose-500">Error loading events. Check console.</div>`; }
+            } catch (err) { console.error(err); grid.innerHTML = `<div class="text-rose-500 col-span-full">Error loading events.</div>`; }
         }
 
-        // 2. Add New Event
-        window.saveEvent = async () => {
-            const name = document.getElementById('newEventName').value;
-            const loc = document.getElementById('newEventLocation').value;
-            const crewRaw = document.getElementById('newEventCrew').value;
-            if(!name) return alert("Please enter an event name.");
-
-            const btn = document.getElementById('btnSaveEvent');
-            btn.innerHTML = "Saving..."; btn.disabled = true;
-
-            const crewArray = crewRaw.split(',').map(s => s.trim()).filter(s => s !== "");
-
-            try {
-                await addDoc(collection(db, "events"), {
-                    name: name,
-                    location: loc,
-                    assignedCrew: crewArray,
-                    createdAt: serverTimestamp()
-                });
-                closeModal('addEventModal');
-                loadEvents();
-            } catch (err) { console.error(err); alert("Error saving event."); }
-            btn.innerHTML = "Save Event"; btn.disabled = false;
+        window.prepareEventModal = async () => {
+            await fetchGlobalData();
+            const cDiv = document.getElementById('crewSelectionDiv'); cDiv.innerHTML = "";
+            globalCrewList.forEach(c => {
+                cDiv.innerHTML += `<label class="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-800 cursor-pointer hover:border-orange-500 transition"><input type="checkbox" value="${c.name}" class="crew-cb accent-orange-500"><span class="text-xs text-slate-300">${c.name}</span></label>`;
+            });
+            const iDiv = document.getElementById('equipmentSelectionDiv'); iDiv.innerHTML = "";
+            globalInventoryList.forEach(i => {
+                iDiv.innerHTML += `<label class="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-800 cursor-pointer hover:border-orange-500 transition"><input type="checkbox" value="${i.name}" class="eq-cb accent-orange-500"><span class="text-xs text-slate-300 truncate" title="${i.name}">${i.name}</span></label>`;
+            });
+            openModal('addEventModal');
         };
 
-        // 3. Open Event Details
+        window.saveEvent = async () => {
+            const name = document.getElementById('newEventName').value, loc = document.getElementById('newEventLocation').value;
+            if(!name) return alert("Enter event name.");
+            const crewArray = Array.from(document.querySelectorAll('.crew-cb:checked')).map(cb => cb.value);
+            const eqArray = Array.from(document.querySelectorAll('.eq-cb:checked')).map(cb => ({ name: cb.value, status: 'pending' }));
+
+            document.getElementById('btnSaveEvent').disabled = true;
+            try {
+                await addDoc(collection(db, "events"), { name: name, location: loc, assignedCrew: crewArray, equipment: eqArray, createdAt: serverTimestamp() });
+                closeModal('addEventModal'); loadEvents();
+            } catch (err) { console.error(err); alert("Error"); }
+            document.getElementById('btnSaveEvent').disabled = false;
+        };
+
         function openEventDetails(e) {
             activeEventId = e.id;
             document.getElementById('detailEventName').innerText = e.name;
-            document.getElementById('detailEventLocation').innerHTML = `<i class="fas fa-map-marker-alt mr-2 text-orange-500"></i>${e.location}`;
+            document.getElementById('detailEventLocation').innerHTML = `<i class="fas fa-map-marker-alt mr-2 text-orange-500/80"></i>${e.location}`;
             
-            const crewDiv = document.getElementById('detailEventCrew');
-            crewDiv.innerHTML = "";
+            const crewDiv = document.getElementById('detailEventCrew'); crewDiv.innerHTML = "";
             if(e.assignedCrew && e.assignedCrew.length > 0) {
-                e.assignedCrew.forEach(c => {
-                    crewDiv.innerHTML += `<span class="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs font-bold border border-slate-700"><i class="fas fa-user text-orange-500 mr-1"></i>${c}</span>`;
-                });
-            } else { crewDiv.innerHTML = '<span class="text-slate-500 text-xs">No crew assigned.</span>'; }
+                e.assignedCrew.forEach(c => crewDiv.innerHTML += `<span class="bg-slate-800/80 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 shadow-sm"><i class="fas fa-user text-orange-500/70 mr-2"></i>${c}</span>`);
+            } else { crewDiv.innerHTML = '<span class="text-slate-500 text-xs italic">No crew assigned</span>'; }
 
-            showView('eventDetailsView');
-            loadEventShifts(e.id);
-            loadEventTasks(e.id);
+            switchAdminView('eventDetailsView');
+            loadEventShifts(e.id); loadEventTasks(e.id);
         }
 
-        // 4. Load Shift Logs for Event
+        window.copyClientPortalLink = () => {
+            const link = `${window.location.origin}/client.html?event=${activeEventId}`;
+            // Simulating copy feature for demonstration
+            alert(`Client Portal Link:\n\n${link}\n\n(In a real setup, this copies to clipboard & opens client view)`);
+        }
+
+        // --- Shifts ---
         async function loadEventShifts(eventId) {
-            const list = document.getElementById('eventShiftsList');
-            list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-orange-500"></i></div>';
+            const list = document.getElementById('eventShiftsList'); list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-slate-500"></i></div>';
             try {
-                // simple query, filter in memory to avoid index issues
-                const snap = await getDocs(collection(db, "shift_logs"));
-                let logs = [];
-                snap.forEach(d => {
-                    let data = d.data();
-                    if(data.eventId === eventId) logs.push({id: d.id, ...data});
-                });
-                
-                logs.sort((a,b) => b.timestamp - a.timestamp); // Sort newest first
-
+                const snap = await getDocs(query(collection(db, "shift_logs"), where("eventId", "==", eventId), orderBy("timestamp", "desc")));
                 list.innerHTML = "";
-                if(logs.length === 0) { list.innerHTML = '<div class="text-slate-500 text-sm text-center">No logs available</div>'; return; }
+                if(snap.empty) { list.innerHTML = '<div class="text-slate-500 text-sm text-center bg-slate-900/50 p-4 border border-dashed border-slate-800 rounded-xl">No shift logs found</div>'; return; }
 
-                logs.forEach(log => {
+                snap.forEach(d => {
+                    const log = d.data();
                     list.innerHTML += `
-                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex gap-4 transition hover:border-slate-700 shadow-sm">
+                        <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-4 flex gap-4 transition hover:bg-slate-900">
                             <div class="flex flex-col gap-2 w-16">
-                                <div class="relative w-16 h-16 rounded overflow-hidden cursor-pointer border border-slate-800 hover:border-emerald-500" onclick="viewImage('${log.setupPhoto}')">
-                                    <img src="${log.setupPhoto}" class="w-full h-full object-cover">
-                                    <div class="absolute bottom-0 w-full bg-black/80 text-[8px] text-center font-bold text-white py-0.5">SETUP</div>
-                                </div>
-                                <div class="relative w-16 h-16 rounded overflow-hidden cursor-pointer border border-slate-800 hover:border-rose-500" onclick="viewImage('${log.packupPhoto}')">
-                                    <img src="${log.packupPhoto}" class="w-full h-full object-cover">
-                                    <div class="absolute bottom-0 w-full bg-black/80 text-[8px] text-center font-bold text-white py-0.5">PACKUP</div>
-                                </div>
+                                <div class="relative w-16 h-16 rounded overflow-hidden cursor-pointer border border-slate-700 hover:border-emerald-500" onclick="viewImage('${log.setupPhoto}')"><img src="${log.setupPhoto}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-slate-900/80 text-[8px] text-center font-bold text-white py-0.5">IN</div></div>
+                                <div class="relative w-16 h-16 rounded overflow-hidden cursor-pointer border border-slate-700 hover:border-rose-500" onclick="viewImage('${log.packupPhoto}')"><img src="${log.packupPhoto}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-slate-900/80 text-[8px] text-center font-bold text-white py-0.5">OUT</div></div>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-bold text-white text-sm mb-1">${log.crewName}</h4>
-                                <p class="text-xs text-slate-400 mb-2">${new Date(log.startTime).toLocaleString()} - ${new Date(log.endTime).toLocaleString()}</p>
+                                <p class="text-[10px] text-slate-400 mb-2 font-mono">${new Date(log.startTime).toLocaleTimeString()} - ${new Date(log.endTime).toLocaleTimeString()}</p>
                                 <div class="flex gap-2">
-                                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-hourglass-half"></i> ${log.hours}h</span>
-                                    <span class="bg-rose-500/10 text-rose-400 border border-rose-500/30 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-money-bill"></i> Rs.${log.expenses || 0}</span>
+                                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded text-[10px] font-bold"><i class="fas fa-hourglass-half mr-1"></i> ${log.hours}h</span>
+                                    <span class="bg-slate-800 text-slate-300 border border-slate-700 px-2 py-1 rounded text-[10px] font-bold">LKR ${log.expenses || 0}</span>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
-            } catch(e) { console.error(e); list.innerHTML = '<div class="text-rose-500 text-sm">Error loading logs</div>'; }
+            } catch(e) { console.error(e); list.innerHTML = '<div class="text-rose-500 text-xs">Error loading logs</div>'; }
         }
 
-        // 5. Load Tasks
+        // --- Tasks ---
         function loadEventTasks(eventId) {
             const list = document.getElementById('eventTasksList');
             onSnapshot(collection(db, `events/${eventId}/deliverables`), (snap) => {
-                let tasks = [];
-                snap.forEach(d => tasks.push({id: d.id, ...d.data()}));
-                // Sort locally
+                let tasks = []; snap.forEach(d => tasks.push({id: d.id, ...d.data()}));
                 tasks.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
                 
                 list.innerHTML = "";
-                if(tasks.length === 0) { list.innerHTML = '<div class="text-slate-500 text-sm text-center">No tasks assigned</div>'; return; }
+                if(tasks.length === 0) { list.innerHTML = '<div class="text-slate-500 text-sm text-center bg-slate-900/50 p-4 border border-dashed border-slate-800 rounded-xl">No tasks assigned</div>'; return; }
 
                 tasks.forEach(t => {
                     let proofHtml = '';
                     if(t.status !== 'new') {
-                        let links = t.submittedLink ? `<a href="${t.submittedLink}" target="_blank" class="text-blue-400 hover:underline text-xs block mb-2"><i class="fas fa-link mr-1"></i>${t.submittedLink}</a>` : '';
-                        let imgs = (t.photos || []).map(p => `<img src="${p}" onclick="viewImage('${p}')" class="w-10 h-10 object-cover rounded cursor-pointer border border-slate-700 hover:border-orange-500">`).join('');
+                        let links = t.submittedLink ? `<a href="${t.submittedLink}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs block mb-3 font-medium"><i class="fas fa-external-link-alt mr-1.5"></i>${t.submittedLink}</a>` : '';
+                        let imgs = (t.photos || []).map(p => `<img src="${p}" onclick="viewImage('${p}')" class="w-12 h-12 object-cover rounded-lg cursor-pointer border border-slate-700 hover:border-orange-500 transition">`).join('');
                         
                         let actionBtn = t.status === 'pending_approval' 
-                            ? `<button onclick="approveTask('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded mt-3 shadow-lg transition">Approve Task</button>`
-                            : `<div class="mt-3 text-emerald-400 text-xs font-bold text-center bg-emerald-500/10 py-1.5 rounded border border-emerald-500/20"><i class="fas fa-check-double mr-1"></i> Approved</div>`;
+                            ? `<button onclick="approveTask('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] tracking-wider uppercase font-bold py-2.5 rounded-lg mt-3 shadow-lg transition">Approve Deliverable</button>`
+                            : `<div class="mt-3 text-emerald-400 text-xs font-bold text-center bg-emerald-500/5 py-2 rounded-lg border border-emerald-500/20"><i class="fas fa-check-circle mr-1.5"></i> Approved</div>`;
 
-                        proofHtml = `<div class="mt-3 p-3 bg-slate-950 rounded-lg border border-slate-800">
-                                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Evidence / Attachments</p>
-                                        ${links}
-                                        <div class="flex gap-2">${imgs}</div>
-                                        ${actionBtn}
+                        proofHtml = `<div class="mt-4 p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
+                                        <p class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-3">Submitted Evidence</p>
+                                        ${links}<div class="flex gap-2">${imgs}</div>${actionBtn}
                                      </div>`;
                     }
 
-                    let statusBadge = t.status === 'new' ? '<span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">New</span>' :
-                                      t.status === 'pending_approval' ? '<span class="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/30">Pending</span>' :
-                                      '<span class="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded border border-emerald-500/30">Completed</span>';
+                    let statusUI = t.status === 'new' ? '<span class="text-[9px] bg-slate-800 text-slate-400 px-2 py-1 rounded uppercase tracking-wider font-bold">New</span>' :
+                                   t.status === 'pending_approval' ? '<span class="text-[9px] bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20 uppercase tracking-wider font-bold">Review</span>' :
+                                   '<span class="text-[9px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded border border-emerald-500/20 uppercase tracking-wider font-bold">Done</span>';
 
                     list.innerHTML += `
-                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
-                            <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-bold text-white text-sm pr-2">${t.title}</h4>
-                                ${statusBadge}
-                            </div>
-                            <p class="text-xs text-slate-400">${t.description}</p>
-                            ${proofHtml}
-                        </div>
-                    `;
+                        <div class="glass-card rounded-xl p-5 shadow-sm border border-slate-800/50">
+                            <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-white text-sm pr-2">${t.title}</h4>${statusUI}</div>
+                            <p class="text-xs text-slate-400 leading-relaxed">${t.description}</p>${proofHtml}
+                        </div>`;
                 });
             });
         }
 
-        // 6. Add Task
         window.saveTask = async () => {
-            const title = document.getElementById('newTaskTitle').value;
-            const desc = document.getElementById('newTaskDesc').value;
+            const title = document.getElementById('newTaskTitle').value, desc = document.getElementById('newTaskDesc').value;
             if(!title || !activeEventId) return;
-
-            const btn = document.getElementById('btnSaveTask');
-            btn.innerHTML = "Adding..."; btn.disabled = true;
-            try {
-                await addDoc(collection(db, `events/${activeEventId}/deliverables`), {
-                    title: title, description: desc, status: 'new', createdAt: serverTimestamp()
-                });
-                closeModal('addTaskModal');
-            } catch(e) { console.error(e); alert("Error adding task."); }
-            btn.innerHTML = "Add Task"; btn.disabled = false;
+            try { await addDoc(collection(db, `events/${activeEventId}/deliverables`), { title, description: desc, status: 'new', createdAt: serverTimestamp() }); closeModal('addTaskModal'); } 
+            catch(e) { console.error(e); }
         };
 
-        // 7. Approve Task
         window.approveTask = async (taskId) => {
-            if(confirm("Are you sure you want to approve this?")) {
-                try {
-                    await updateDoc(doc(db, `events/${activeEventId}/deliverables/${taskId}`), { status: 'completed' });
-                } catch(e) { console.error(e); alert("Error approving task."); }
+            if(confirm("Approve this deliverable?")) {
+                try { await updateDoc(doc(db, `events/${activeEventId}/deliverables/${taskId}`), { status: 'completed' }); } 
+                catch(e) { console.error(e); }
             }
         }
 
-        // Init
-        loadEvents();
+        // --- Crew & Inventory Management ---
+        async function loadCrew() {
+            const grid = document.getElementById('crewGrid'); grid.innerHTML = '<div class="text-slate-500"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            try {
+                const snap = await getDocs(collection(db, "crew")); grid.innerHTML = "";
+                if(snap.empty) { grid.innerHTML = '<div class="text-slate-500 text-sm">No crew members. Add one above.</div>'; return; }
+                snap.forEach(d => {
+                    const c = d.data();
+                    grid.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-user-astronaut"></i></div><div><h4 class="text-white font-bold">${c.name}</h4><p class="text-xs text-slate-400">${c.role || 'Member'}</p></div></div>`;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        window.saveCrew = async () => {
+            const name = document.getElementById('newCrewName').value, role = document.getElementById('newCrewRole').value;
+            if(!name) return;
+            try { await addDoc(collection(db, "crew"), { name, role, addedAt: serverTimestamp() }); closeModal('addCrewModal'); loadCrew(); } 
+            catch(e) { console.error(e); }
+        }
+
+        async function loadInventory() {
+            const grid = document.getElementById('inventoryGrid'); grid.innerHTML = '<div class="text-slate-500"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            try {
+                const snap = await getDocs(collection(db, "inventory")); grid.innerHTML = "";
+                if(snap.empty) { grid.innerHTML = '<div class="text-slate-500 text-sm">No gear listed. Add items above.</div>'; return; }
+                snap.forEach(d => {
+                    const i = d.data();
+                    grid.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4"><div class="w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl"><i class="fas fa-camera"></i></div><div><h4 class="text-white font-bold text-sm">${i.name}</h4><p class="text-[10px] text-slate-500 font-mono mt-1">${i.tag || 'NO-TAG'}</p></div></div>`;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        window.saveInventory = async () => {
+            const name = document.getElementById('newInvName').value, tag = document.getElementById('newInvTag').value;
+            if(!name) return;
+            try { await addDoc(collection(db, "inventory"), { name, tag, addedAt: serverTimestamp() }); closeModal('addInventoryModal'); loadInventory(); } 
+            catch(e) { console.error(e); }
+        }
+
+        // Init App Default View
+        switchAdminView('dashboardView');
     </script>
 </body>
 </html>
