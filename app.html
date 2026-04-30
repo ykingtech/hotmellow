@@ -157,7 +157,7 @@
                     <p class="text-xs text-slate-400 mb-6 leading-relaxed">Pack-up list: Scan QR codes on your equipment to check them back in.</p>
                     
                     <!-- Scanner Container -->
-                    <div id="reader" class="w-full rounded-2xl overflow-hidden mb-4 border-2 border-emerald-500 hidden"></div>
+                    <div id="reader" class="w-full rounded-2xl overflow-hidden mb-4 border-2 border-emerald-500 hidden bg-black min-h-[300px]"></div>
                     
                     <button id="btnScanToggle" onclick="toggleScanner()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold tracking-wide shadow-[0_4px_14px_0_rgba(16,185,129,0.2)] transition flex justify-center items-center gap-2 mb-6">
                         <i class="fas fa-camera"></i> Start Scanner
@@ -403,9 +403,22 @@
             if (reader.classList.contains('hidden')) {
                 reader.classList.remove('hidden');
                 html5QrCode = new Html5Qrcode("reader");
+                
+                // Define a responsive QR Box that scales with the screen
+                const qrboxFunction = function(viewfinderWidth, viewfinderHeight) {
+                    let minEdgePercentage = 0.7; // 70% of the camera width
+                    let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                    let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                    return { width: qrboxSize, height: qrboxSize };
+                };
+
                 html5QrCode.start(
                     { facingMode: "environment" }, 
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    { 
+                        fps: 15, 
+                        qrbox: qrboxFunction,
+                        aspectRatio: 1.0 // Fixes squished video on some mobile screens
+                    },
                     (decodedText) => handleScan(decodedText),
                     (errorMessage) => { /* Ignore background scan errors */ }
                 ).catch(err => {
