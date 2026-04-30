@@ -8,6 +8,8 @@
     <meta name="theme-color" content="#020617">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #020617; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -18,12 +20,16 @@
 </head>
 <body class="text-slate-100 flex h-screen overflow-hidden">
 
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/70 z-40 hidden md:hidden transition-opacity" onclick="toggleSidebar()"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex z-20">
-        <div class="p-6 border-b border-slate-800 flex items-center justify-center">
+    <aside id="adminSidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-300 ease-in-out z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl md:shadow-none">
+        <div class="p-6 border-b border-slate-800 flex items-center justify-between">
             <img src="logo.png" alt="Hotmello Productions" class="h-8 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" onerror="this.outerHTML='<h1 class=\'font-black text-orange-500 text-xl tracking-widest\'>HOTMELLO</h1>'">
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
         </div>
-        <nav class="flex-1 p-4 space-y-2 mt-4">
+        <nav class="flex-1 p-4 space-y-2 mt-4 overflow-y-auto">
             <button onclick="switchAdminView('dashboardView')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-orange-600/10 text-orange-500 font-bold transition">
                 <i class="fas fa-chart-pie w-5"></i> Dashboard
             </button>
@@ -34,7 +40,7 @@
                 <i class="fas fa-users w-5"></i> Crew & Payroll
             </button>
             <button onclick="switchAdminView('inventoryView')" id="nav-inventory" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-boxes w-5"></i> Gear Inventory
+                <i class="fas fa-qrcode w-5"></i> QR Inventory
             </button>
         </nav>
         <div class="p-4 border-t border-slate-800 text-center">
@@ -48,17 +54,20 @@
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-orange-600/5 rounded-full blur-[100px] pointer-events-none"></div>
 
         <!-- Topbar -->
-        <header class="bg-slate-900/40 backdrop-blur-md border-b border-slate-800/50 p-5 flex justify-between items-center z-10 sticky top-0">
-            <h2 id="topBarTitle" class="text-xl font-bold text-white tracking-wide">Overview</h2>
+        <header class="bg-slate-900/40 backdrop-blur-md border-b border-slate-800/50 p-4 lg:p-5 flex justify-between items-center z-10 sticky top-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-300 hover:text-white p-1"><i class="fas fa-bars text-xl"></i></button>
+                <h2 id="topBarTitle" class="text-lg lg:text-xl font-bold text-white tracking-wide">Overview</h2>
+            </div>
             <div id="topBarActions"></div>
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto p-6 lg:p-8 relative z-10 scroll-smooth">
+        <div class="flex-1 overflow-y-auto p-4 lg:p-8 relative z-10 scroll-smooth">
             
             <!-- Dashboard View -->
             <div id="dashboardView" class="space-y-6 animate-fade-in">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     <div class="glass-card p-6 rounded-2xl">
                         <div class="flex justify-between items-start">
                             <div><p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Total Events</p><h3 id="statEvents" class="text-3xl font-black text-white mt-1">--</h3></div>
@@ -82,7 +91,7 @@
                 <div class="glass-card p-6 rounded-2xl mt-8">
                     <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4">Recent Shift Logs</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-400">
+                        <table class="w-full text-left text-sm text-slate-400 whitespace-nowrap">
                             <thead class="text-xs uppercase bg-slate-800/50 text-slate-300">
                                 <tr><th class="px-4 py-3 rounded-l-lg">Crew</th><th class="px-4 py-3">Event</th><th class="px-4 py-3">Hours</th><th class="px-4 py-3 rounded-r-lg">Status</th></tr>
                             </thead>
@@ -106,13 +115,18 @@
                 <div class="glass-card rounded-3xl p-6 lg:p-8 relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div class="absolute top-0 right-0 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl pointer-events-none"></div>
                     <div class="relative z-10">
-                        <h2 id="detailEventName" class="text-3xl font-black text-white tracking-wide mb-2">Event Name</h2>
+                        <h2 id="detailEventName" class="text-2xl md:text-3xl font-black text-white tracking-wide mb-2">Event Name</h2>
                         <p id="detailEventLocation" class="text-slate-400 font-medium"><i class="fas fa-map-marker-alt mr-2 text-orange-500/80"></i>Location</p>
                         <div class="mt-4 flex flex-wrap gap-2" id="detailEventCrew"></div>
                     </div>
-                    <button onclick="copyClientPortalLink()" class="relative z-10 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition border border-slate-700 flex items-center gap-2 shadow-lg">
-                        <i class="fas fa-external-link-alt text-orange-500"></i> Copy Client Portal Link
-                    </button>
+                </div>
+
+                <!-- Missing Gear Reports -->
+                <div class="glass-card rounded-2xl p-6 border border-rose-500/20">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-800 pb-3">
+                        <i class="fas fa-exclamation-triangle text-rose-500"></i> Missing Gear Reports
+                    </h3>
+                    <div id="eventMissingList" class="space-y-3"></div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -124,7 +138,7 @@
                     <div class="glass-card rounded-2xl p-6">
                         <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
                             <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-tasks text-amber-500"></i> Deliverables</h3>
-                            <button onclick="openModal('addTaskModal')" class="bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                            <button onclick="openModal('addTaskModal')" class="bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap">
                                 + Assign Task
                             </button>
                         </div>
@@ -143,15 +157,16 @@
             <!-- Inventory Management View -->
             <div id="inventoryView" class="hidden space-y-6 animate-fade-in">
                 <div class="glass-card p-6 rounded-2xl">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="inventoryGrid"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="inventoryGrid"></div>
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- Modal: Add Event -->
-    <div id="addEventModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Modals -->
+    <!-- Add Event -->
+    <div id="addEventModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-5 border-b border-slate-800 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-white tracking-wide">Create New Event</h3>
@@ -168,11 +183,11 @@
                 </div>
                 <div>
                     <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">Assign Crew</label>
-                    <div id="crewSelectionDiv" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-slate-950 border border-slate-800 p-3 rounded-xl"></div>
+                    <div id="crewSelectionDiv" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-slate-950 border border-slate-800 p-3 rounded-xl"></div>
                 </div>
                 <div>
                     <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">Assign Gear/Equipment</label>
-                    <div id="equipmentSelectionDiv" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto bg-slate-950 border border-slate-800 p-3 rounded-xl"></div>
+                    <div id="equipmentSelectionDiv" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto bg-slate-950 border border-slate-800 p-3 rounded-xl"></div>
                 </div>
             </div>
             <div class="p-5 border-t border-slate-800 bg-slate-900/50">
@@ -183,8 +198,8 @@
         </div>
     </div>
 
-    <!-- Modal: Add Task -->
-    <div id="addTaskModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Add Task -->
+    <div id="addTaskModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Assign Task</h3><button onclick="closeModal('addTaskModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
             <div class="p-6 space-y-4">
@@ -195,8 +210,8 @@
         </div>
     </div>
     
-    <!-- Modal: Add Crew -->
-    <div id="addCrewModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Add Crew -->
+    <div id="addCrewModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Crew Member</h3><button onclick="closeModal('addCrewModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
             <div class="p-6 space-y-4">
@@ -207,27 +222,26 @@
         </div>
     </div>
 
-    <!-- Modal: Add Inventory -->
-    <div id="addInventoryModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Add Inventory -->
+    <div id="addInventoryModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Gear</h3><button onclick="closeModal('addInventoryModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Gear Item</h3><button onclick="closeModal('addInventoryModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
             <div class="p-6 space-y-4">
                 <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Item Name / Model</label><input type="text" id="newInvName" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
                 <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Serial / ID Tag</label><input type="text" id="newInvTag" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
-                <button onclick="saveInventory()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mt-2 hover:bg-emerald-500">Save Gear</button>
+                <button onclick="saveInventory()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mt-2 hover:bg-emerald-500">Save Item & Generate QR</button>
             </div>
         </div>
     </div>
 
     <!-- Image Viewer -->
-    <div id="imageViewerModal" class="hidden fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4">
+    <div id="imageViewerModal" class="hidden fixed inset-0 bg-black/95 z-[110] flex flex-col items-center justify-center p-4">
         <button onclick="closeModal('imageViewerModal')" class="absolute top-6 right-6 text-white text-3xl hover:text-rose-500 transition"><i class="fas fa-times"></i></button>
         <img id="viewerImage" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-slate-800">
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-        // Added 'where' to the imports to prevent query errors
         import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
@@ -248,9 +262,15 @@
         let globalCrewList = [];
         let globalInventoryList = [];
 
-        // UI Routing
+        // UI & Sidebar Routing
+        window.toggleSidebar = () => {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
         window.switchAdminView = (viewId) => {
-            // Added null checks to prevent 'classList' of null errors
             ['dashboardView', 'eventsView', 'eventDetailsView', 'crewView', 'inventoryView'].forEach(v => {
                 const el = document.getElementById(v);
                 if (el) el.classList.add('hidden');
@@ -258,9 +278,7 @@
             
             ['dashboard', 'events', 'crew', 'inventory'].forEach(v => {
                 const btn = document.getElementById(`nav-${v}`);
-                if (btn) {
-                    btn.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white";
-                }
+                if (btn) btn.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white";
             });
 
             const targetView = document.getElementById(viewId);
@@ -276,15 +294,20 @@
                 navBtn.className = `w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-${c}-600/10 text-${c}-500 font-bold transition`;
             }
 
-            const titles = { 'dashboardView': 'System Overview', 'eventsView': 'Events Management', 'crewView': 'Crew Directory', 'inventoryView': 'Gear Inventory' };
+            const titles = { 'dashboardView': 'System Overview', 'eventsView': 'Events Management', 'crewView': 'Crew Directory', 'inventoryView': 'QR Gear Inventory' };
             if (titles[viewId]) document.getElementById('topBarTitle').innerText = titles[viewId];
 
             const topActions = document.getElementById('topBarActions');
             if (topActions) {
                 topActions.innerHTML = "";
-                if(viewId === 'eventsView') topActions.innerHTML = `<button onclick="prepareEventModal()" class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-plus"></i> New Event</button>`;
-                if(viewId === 'crewView') topActions.innerHTML = `<button onclick="openModal('addCrewModal')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Crew</button>`;
-                if(viewId === 'inventoryView') topActions.innerHTML = `<button onclick="openModal('addInventoryModal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-box-open"></i> Add Gear</button>`;
+                if(viewId === 'eventsView') topActions.innerHTML = `<button onclick="prepareEventModal()" class="bg-orange-600 hover:bg-orange-500 text-white px-3 md:px-4 py-2 rounded-lg font-bold text-xs md:text-sm shadow-lg flex items-center gap-2 whitespace-nowrap"><i class="fas fa-plus"></i> New Event</button>`;
+                if(viewId === 'crewView') topActions.innerHTML = `<button onclick="openModal('addCrewModal')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 md:px-4 py-2 rounded-lg font-bold text-xs md:text-sm shadow-lg flex items-center gap-2 whitespace-nowrap"><i class="fas fa-user-plus"></i> Add Crew</button>`;
+                if(viewId === 'inventoryView') topActions.innerHTML = `<button onclick="openModal('addInventoryModal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-4 py-2 rounded-lg font-bold text-xs md:text-sm shadow-lg flex items-center gap-2 whitespace-nowrap"><i class="fas fa-qrcode"></i> New Gear</button>`;
+            }
+
+            // Hide sidebar on mobile after clicking a link
+            if(window.innerWidth < 768 && !document.getElementById('adminSidebar').classList.contains('-translate-x-full')) {
+                toggleSidebar();
             }
 
             if(viewId === 'dashboardView') loadDashboard();
@@ -293,24 +316,14 @@
             if(viewId === 'inventoryView') loadInventory();
         };
 
-        window.openModal = (id) => {
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('hidden');
-        };
-        
+        window.openModal = (id) => { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); };
         window.closeModal = (id) => {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
+            const el = document.getElementById(id); if (el) el.classList.add('hidden');
             if(id === 'addEventModal') { document.getElementById('newEventName').value=''; document.getElementById('newEventLocation').value=''; }
             if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value=''; document.getElementById('newTaskDesc').value=''; }
+            if(id === 'addInventoryModal') { document.getElementById('newInvName').value=''; document.getElementById('newInvTag').value=''; }
         };
-        
-        window.viewImage = (src) => { 
-            if(src) { 
-                document.getElementById('viewerImage').src = src; 
-                openModal('imageViewerModal'); 
-            } 
-        };
+        window.viewImage = (src) => { if(src) { document.getElementById('viewerImage').src = src; openModal('imageViewerModal'); } };
 
         // --- Core Data Loaders ---
         async function fetchGlobalData() {
@@ -320,9 +333,7 @@
                 
                 const iSnap = await getDocs(collection(db, "inventory"));
                 globalInventoryList = []; iSnap.forEach(d => globalInventoryList.push({id: d.id, ...d.data()}));
-            } catch(e) { 
-                console.error("Global data fetch err", e); 
-            }
+            } catch(e) { console.error("Global data fetch err", e); }
         }
 
         // --- Dashboard ---
@@ -375,8 +386,8 @@
                         <h3 class="text-xl font-bold text-white mb-1 truncate">${e.name}</h3>
                         <p class="text-sm text-slate-400 mb-5 truncate"><i class="fas fa-map-marker-alt mr-2 opacity-70"></i>${e.location || 'N/A'}</p>
                         <div class="flex gap-2">
-                            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border border-slate-700"><i class="fas fa-users mr-1"></i> ${e.assignedCrew?e.assignedCrew.length:0} Crew</span>
-                            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border border-slate-700"><i class="fas fa-boxes mr-1"></i> ${e.equipment?e.equipment.length:0} Gear</span>
+                            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border border-slate-700"><i class="fas fa-users mr-1"></i> ${e.assignedCrew?e.assignedCrew.length:0}</span>
+                            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border border-slate-700"><i class="fas fa-qrcode mr-1"></i> ${e.equipment?e.equipment.length:0} Gear</span>
                         </div>
                     `;
                     grid.appendChild(card);
@@ -392,7 +403,8 @@
             });
             const iDiv = document.getElementById('equipmentSelectionDiv'); iDiv.innerHTML = "";
             globalInventoryList.forEach(i => {
-                iDiv.innerHTML += `<label class="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-800 cursor-pointer hover:border-orange-500 transition"><input type="checkbox" value="${i.name}" class="eq-cb accent-orange-500"><span class="text-xs text-slate-300 truncate" title="${i.name}">${i.name}</span></label>`;
+                // Ensure we save ID and Name for the scanner
+                iDiv.innerHTML += `<label class="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-800 cursor-pointer hover:border-orange-500 transition"><input type="checkbox" value="${i.id}" data-name="${i.name}" class="eq-cb accent-orange-500"><span class="text-xs text-slate-300 truncate" title="${i.name}">${i.name}</span></label>`;
             });
             openModal('addEventModal');
         };
@@ -401,7 +413,8 @@
             const name = document.getElementById('newEventName').value, loc = document.getElementById('newEventLocation').value;
             if(!name) return alert("Enter event name.");
             const crewArray = Array.from(document.querySelectorAll('.crew-cb:checked')).map(cb => cb.value);
-            const eqArray = Array.from(document.querySelectorAll('.eq-cb:checked')).map(cb => ({ name: cb.value, status: 'pending' }));
+            // Equipment is an array of objects: { id, name, status }
+            const eqArray = Array.from(document.querySelectorAll('.eq-cb:checked')).map(cb => ({ id: cb.value, name: cb.dataset.name, status: 'pending' }));
 
             document.getElementById('btnSaveEvent').disabled = true;
             try {
@@ -422,12 +435,31 @@
             } else { crewDiv.innerHTML = '<span class="text-slate-500 text-xs italic">No crew assigned</span>'; }
 
             switchAdminView('eventDetailsView');
-            loadEventShifts(e.id); loadEventTasks(e.id);
+            loadEventShifts(e.id); loadEventTasks(e.id); loadMissingReports(e.id);
         }
 
-        window.copyClientPortalLink = () => {
-            const link = `${window.location.origin}/client.html?event=${activeEventId}`;
-            alert(`Client Portal Link:\n\n${link}\n\n(In a real setup, this copies to clipboard & opens client view)`);
+        // --- Missing Gear Reports ---
+        async function loadMissingReports(eventId) {
+            const list = document.getElementById('eventMissingList'); list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-slate-500"></i></div>';
+            try {
+                const snap = await getDocs(query(collection(db, "missing_reports"), where("eventId", "==", eventId), orderBy("reportedAt", "desc")));
+                list.innerHTML = "";
+                if(snap.empty) { list.innerHTML = '<div class="text-slate-500 text-sm text-center">No missing gear reported.</div>'; return; }
+                
+                snap.forEach(d => {
+                    const r = d.data();
+                    const missingNames = r.missingItems.map(i => i.name).join(', ');
+                    const dateStr = r.reportedAt ? new Date(r.reportedAt.toDate()).toLocaleString() : 'N/A';
+                    list.innerHTML += `
+                        <div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-rose-400 text-sm"><i class="fas fa-user-shield mr-1"></i> Reported by: ${r.reportedBy}</h4>
+                                <span class="text-[9px] text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-800">${dateStr}</span>
+                            </div>
+                            <p class="text-xs text-white leading-relaxed"><span class="text-rose-400/80 font-bold uppercase tracking-wider text-[10px] block mb-1">Missing Items:</span> ${missingNames}</p>
+                        </div>`;
+                });
+            } catch(e) { console.error(e); list.innerHTML = '<div class="text-slate-500 text-sm">Failed to load reports.</div>'; }
         }
 
         // --- Shifts ---
@@ -517,7 +549,7 @@
             const grid = document.getElementById('crewGrid'); grid.innerHTML = '<div class="text-slate-500"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
             try {
                 const snap = await getDocs(collection(db, "crew")); grid.innerHTML = "";
-                if(snap.empty) { grid.innerHTML = '<div class="text-slate-500 text-sm">No crew members. Add one above.</div>'; return; }
+                if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-slate-500 text-sm text-center">No crew members. Add one above.</div>'; return; }
                 snap.forEach(d => {
                     const c = d.data();
                     grid.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-user-astronaut"></i></div><div><h4 class="text-white font-bold">${c.name}</h4><p class="text-xs text-slate-400">${c.role || 'Member'}</p></div></div>`;
@@ -532,14 +564,54 @@
             catch(e) { console.error(e); }
         }
 
+        // --- Inventory & QR Code Generation ---
+        window.downloadQR = (id, name) => {
+            const canvas = document.querySelector(`#qr-${id} canvas`);
+            if(!canvas) return alert("QR Code not generated yet!");
+            const link = document.createElement('a');
+            link.download = `QR_${name}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+
         async function loadInventory() {
             const grid = document.getElementById('inventoryGrid'); grid.innerHTML = '<div class="text-slate-500"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
             try {
                 const snap = await getDocs(collection(db, "inventory")); grid.innerHTML = "";
-                if(snap.empty) { grid.innerHTML = '<div class="text-slate-500 text-sm">No gear listed. Add items above.</div>'; return; }
-                snap.forEach(d => {
-                    const i = d.data();
-                    grid.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4"><div class="w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl"><i class="fas fa-camera"></i></div><div><h4 class="text-white font-bold text-sm">${i.name}</h4><p class="text-[10px] text-slate-500 font-mono mt-1">${i.tag || 'NO-TAG'}</p></div></div>`;
+                if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-slate-500 text-sm text-center">No gear listed. Add items above.</div>'; return; }
+                
+                let items = [];
+                snap.forEach(d => items.push({id: d.id, ...d.data()}));
+                
+                items.forEach(i => {
+                    grid.innerHTML += `
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm hover:border-emerald-500/30 transition">
+                            <div class="flex items-center gap-4 w-full sm:w-auto">
+                                <div id="qr-${i.id}" class="w-14 h-14 bg-white p-1 rounded-lg flex-shrink-0 flex items-center justify-center"></div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-white font-bold text-sm truncate pr-2">${i.name}</h4>
+                                    <p class="text-[10px] text-slate-500 font-mono mt-1">${i.tag || 'NO-TAG'}</p>
+                                </div>
+                            </div>
+                            <button onclick="downloadQR('${i.id}', '${i.name.replace(/[^a-z0-9]/gi, '_')}')" class="w-full sm:w-auto text-emerald-500 hover:text-emerald-400 px-4 py-2 sm:p-3 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition text-xs sm:text-base font-bold flex items-center justify-center gap-2">
+                                <i class="fas fa-download"></i> <span class="sm:hidden">Download QR</span>
+                            </button>
+                        </div>`;
+                });
+
+                // Render QR codes after DOM is updated
+                items.forEach(i => {
+                    const qrContainer = document.getElementById(`qr-${i.id}`);
+                    if(qrContainer) {
+                        new QRCode(qrContainer, {
+                            text: i.id, // Using Firebase Doc ID as the QR data
+                            width: 48,
+                            height: 48,
+                            colorDark : "#020617",
+                            colorLight : "#ffffff",
+                            correctLevel : QRCode.CorrectLevel.L
+                        });
+                    }
                 });
             } catch(e) { console.error(e); }
         }
@@ -547,22 +619,19 @@
         window.saveInventory = async () => {
             const name = document.getElementById('newInvName').value, tag = document.getElementById('newInvTag').value;
             if(!name) return;
-            try { await addDoc(collection(db, "inventory"), { name, tag, addedAt: serverTimestamp() }); closeModal('addInventoryModal'); loadInventory(); } 
+            try { 
+                await addDoc(collection(db, "inventory"), { name, tag, addedAt: serverTimestamp() }); 
+                closeModal('addInventoryModal'); 
+                loadInventory(); 
+            } 
             catch(e) { console.error(e); }
         }
 
-        // Initialize Auth BEFORE loading data to prevent permission issues
         async function initializeAppAdmin() {
-            try {
-                await signInAnonymously(auth);
-            } catch (e) {
-                console.error("Auth init failed", e);
-            }
-            // Init App Default View after auth completes
+            try { await signInAnonymously(auth); } catch (e) { console.error("Auth init failed", e); }
             switchAdminView('dashboardView');
         }
 
-        // Start the application
         initializeAppAdmin();
     </script>
 </body>
