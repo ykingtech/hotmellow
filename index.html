@@ -16,6 +16,12 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Ensures downloaded QR is high-res, but visually small in UI */
+        .qr-container canvas, .qr-container img {
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
 </head>
 <body class="text-slate-100 flex h-screen overflow-hidden">
@@ -234,12 +240,6 @@
         </div>
     </div>
 
-    <!-- Image Viewer -->
-    <div id="imageViewerModal" class="hidden fixed inset-0 bg-black/95 z-[110] flex flex-col items-center justify-center p-4">
-        <button onclick="closeModal('imageViewerModal')" class="absolute top-6 right-6 text-white text-3xl hover:text-rose-500 transition"><i class="fas fa-times"></i></button>
-        <img id="viewerImage" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-slate-800">
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
@@ -323,7 +323,6 @@
             if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value=''; document.getElementById('newTaskDesc').value=''; }
             if(id === 'addInventoryModal') { document.getElementById('newInvName').value=''; document.getElementById('newInvTag').value=''; }
         };
-        window.viewImage = (src) => { if(src) { document.getElementById('viewerImage').src = src; openModal('imageViewerModal'); } };
 
         // --- Core Data Loaders ---
         async function fetchGlobalData() {
@@ -505,15 +504,13 @@
                     let proofHtml = '';
                     if(t.status !== 'new') {
                         let links = t.submittedLink ? `<a href="${t.submittedLink}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs block mb-3 font-medium"><i class="fas fa-external-link-alt mr-1.5"></i>${t.submittedLink}</a>` : '';
-                        let imgs = (t.photos || []).map(p => `<img src="${p}" onclick="viewImage('${p}')" class="w-12 h-12 object-cover rounded-lg cursor-pointer border border-slate-700 hover:border-orange-500 transition">`).join('');
-                        
                         let actionBtn = t.status === 'pending_approval' 
                             ? `<button onclick="approveTask('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] tracking-wider uppercase font-bold py-2.5 rounded-lg mt-3 shadow-lg transition">Approve Deliverable</button>`
                             : `<div class="mt-3 text-emerald-400 text-xs font-bold text-center bg-emerald-500/5 py-2 rounded-lg border border-emerald-500/20"><i class="fas fa-check-circle mr-1.5"></i> Approved</div>`;
 
                         proofHtml = `<div class="mt-4 p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
                                         <p class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-3">Submitted Evidence</p>
-                                        ${links}<div class="flex gap-2">${imgs}</div>${actionBtn}
+                                        ${links}${actionBtn}
                                      </div>`;
                     }
 
@@ -587,7 +584,7 @@
                     grid.innerHTML += `
                         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm hover:border-emerald-500/30 transition">
                             <div class="flex items-center gap-4 w-full sm:w-auto">
-                                <div id="qr-${i.id}" class="w-14 h-14 bg-white p-1 rounded-lg flex-shrink-0 flex items-center justify-center"></div>
+                                <div id="qr-${i.id}" class="qr-container w-16 h-16 bg-white p-1 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden"></div>
                                 <div class="min-w-0 flex-1">
                                     <h4 class="text-white font-bold text-sm truncate pr-2">${i.name}</h4>
                                     <p class="text-[10px] text-slate-500 font-mono mt-1">${i.tag || 'NO-TAG'}</p>
@@ -599,17 +596,17 @@
                         </div>`;
                 });
 
-                // Render QR codes after DOM is updated
+                // Render high-res QR codes
                 items.forEach(i => {
                     const qrContainer = document.getElementById(`qr-${i.id}`);
                     if(qrContainer) {
                         new QRCode(qrContainer, {
                             text: i.id, // Using Firebase Doc ID as the QR data
-                            width: 48,
-                            height: 48,
+                            width: 256, // High resolution for printing
+                            height: 256,
                             colorDark : "#020617",
                             colorLight : "#ffffff",
-                            correctLevel : QRCode.CorrectLevel.L
+                            correctLevel : QRCode.CorrectLevel.H // Better error correction
                         });
                     }
                 });
