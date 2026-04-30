@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotmellow Labs - Admin Panel</title>
+    
+    <meta name="theme-color" content="#09090b">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-zinc-100 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col hidden md:flex">
+        <div class="p-6 border-b border-zinc-800 flex items-center gap-3">
+            <i class="fas fa-camera-retro text-2xl text-fuchsia-500"></i>
+            <div>
+                <h1 class="font-black text-lg text-white tracking-wider">HOTMELLOW</h1>
+                <p class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Admin Dashboard</p>
+            </div>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="showView('eventsView')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-fuchsia-600/10 text-fuchsia-500 font-bold transition hover:bg-zinc-800">
+                <i class="fas fa-calendar-alt w-5"></i> ඉවෙන්ට්ස් (Events)
+            </button>
+            <button onclick="alert('ඉදිරියේදී එකතු වේ')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 font-bold transition hover:bg-zinc-800 hover:text-white">
+                <i class="fas fa-users w-5"></i> කණ්ඩායම (Crew)
+            </button>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Topbar -->
+        <header class="bg-zinc-900/50 backdrop-blur border-b border-zinc-800 p-4 flex justify-between items-center z-10">
+            <h2 id="topBarTitle" class="text-xl font-bold text-white">Events Management</h2>
+            <button onclick="openModal('addEventModal')" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow-lg flex items-center gap-2">
+                <i class="fas fa-plus"></i> නව ඉවෙන්ට් එකක්
+            </button>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-6 relative">
+            
+            <!-- Events List View -->
+            <div id="eventsView" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="eventsGrid">
+                    <div class="col-span-full text-center py-10 text-zinc-500"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>පූරණය වෙමින්...</div>
+                </div>
+            </div>
+
+            <!-- Single Event Details View -->
+            <div id="eventDetailsView" class="hidden space-y-6">
+                <button onclick="showView('eventsView')" class="text-zinc-400 hover:text-white flex items-center gap-2 mb-4 transition">
+                    <i class="fas fa-arrow-left"></i> ආපසු යන්න
+                </button>
+                
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-fuchsia-600/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <h2 id="detailEventName" class="text-3xl font-black text-white mb-2">Event Name</h2>
+                    <p id="detailEventLocation" class="text-zinc-400"><i class="fas fa-map-marker-alt mr-2"></i>Location</p>
+                    
+                    <div class="mt-6 border-t border-zinc-800 pt-6">
+                        <h3 class="text-sm font-bold text-fuchsia-400 uppercase tracking-widest mb-3">අනුයුක්ත කාර්ය මණ්ඩලය (Crew)</h3>
+                        <div id="detailEventCrew" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Shift Logs Column -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-clock text-emerald-500"></i> වැඩ මුර වාර්තා
+                        </h3>
+                        <div id="eventShiftsList" class="space-y-4">
+                            <div class="text-center py-6 text-zinc-500 text-sm">වාර්තා නොමැත</div>
+                        </div>
+                    </div>
+
+                    <!-- Tasks Column -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fas fa-tasks text-amber-500"></i> ලබාදුන් කාර්යයන් (Tasks)
+                            </h3>
+                            <button onclick="openModal('addTaskModal')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded text-xs font-bold transition border border-zinc-700">
+                                + Add Task
+                            </button>
+                        </div>
+                        <div id="eventTasksList" class="space-y-4">
+                            <div class="text-center py-6 text-zinc-500 text-sm">කාර්යයන් නොමැත</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal: Add Event -->
+    <div id="addEventModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
+                <h3 class="text-lg font-bold text-white">නව ඉවෙන්ට් එකක් සාදන්න</h3>
+                <button onclick="closeModal('addEventModal')" class="text-zinc-500 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="text-xs text-zinc-400 font-bold uppercase mb-1 block">ඉවෙන්ට් නාමය (Name)</label>
+                    <input type="text" id="newEventName" class="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-white focus:border-fuchsia-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-xs text-zinc-400 font-bold uppercase mb-1 block">ස්ථානය (Location)</label>
+                    <input type="text" id="newEventLocation" class="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-white focus:border-fuchsia-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-xs text-zinc-400 font-bold uppercase mb-1 block">කණ්ඩායම (කොමා වලින් වෙන් කරන්න)</label>
+                    <textarea id="newEventCrew" rows="3" placeholder="උදා: Sumudu, Kasun, Nimal" class="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-white focus:border-fuchsia-500 outline-none"></textarea>
+                </div>
+                <button onclick="saveEvent()" id="btnSaveEvent" class="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white py-3 rounded-lg font-bold transition shadow-lg mt-2">
+                    ඉවෙන්ට් එක සේව් කරන්න
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Task -->
+    <div id="addTaskModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
+                <h3 class="text-lg font-bold text-white">නව කාර්යයක් ලබාදෙන්න</h3>
+                <button onclick="closeModal('addTaskModal')" class="text-zinc-500 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="text-xs text-zinc-400 font-bold uppercase mb-1 block">කාර්යය (Task Title)</label>
+                    <input type="text" id="newTaskTitle" placeholder="උදා: Edit Wedding Trailer" class="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-white focus:border-fuchsia-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-xs text-zinc-400 font-bold uppercase mb-1 block">විස්තරය (Description)</label>
+                    <textarea id="newTaskDesc" rows="3" class="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-lg text-white focus:border-fuchsia-500 outline-none"></textarea>
+                </div>
+                <button onclick="saveTask()" id="btnSaveTask" class="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white py-3 rounded-lg font-bold transition shadow-lg mt-2">
+                    කාර්යය එක් කරන්න
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="imageViewerModal" class="hidden fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4">
+        <button onclick="closeModal('imageViewerModal')" class="absolute top-6 right-6 text-white text-3xl hover:text-rose-500"><i class="fas fa-times"></i></button>
+        <img id="viewerImage" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl">
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuPT3k3JPOPx2jMYelNAEKietV-OVAWOI",
+            authDomain: "hotmellow-labs.firebaseapp.com",
+            projectId: "hotmellow-labs",
+            storageBucket: "hotmellow-labs.firebasestorage.app",
+            messagingSenderId: "435268267101",
+            appId: "1:435268267101:web:e8aefe8f7f20750dc831b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let activeEventId = null;
+
+        // UI Routing
+        window.showView = (viewId) => {
+            document.getElementById('eventsView').classList.add('hidden');
+            document.getElementById('eventDetailsView').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+            if(viewId === 'eventsView') loadEvents();
+        };
+
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => {
+            document.getElementById(id).classList.add('hidden');
+            if(id === 'addEventModal') { document.getElementById('newEventName').value = ''; document.getElementById('newEventLocation').value = ''; document.getElementById('newEventCrew').value = ''; }
+            if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value = ''; document.getElementById('newTaskDesc').value = ''; }
+        };
+
+        window.viewImage = (src) => {
+            if(!src) return;
+            document.getElementById('viewerImage').src = src;
+            openModal('imageViewerModal');
+        };
+
+        // 1. Load Events
+        async function loadEvents() {
+            const grid = document.getElementById('eventsGrid');
+            try {
+                const snap = await getDocs(collection(db, "events"));
+                grid.innerHTML = "";
+                if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-zinc-500">ඉවෙන්ට්ස් නොමැත.</div>'; return; }
+                
+                let events = [];
+                snap.forEach(d => events.push({id: d.id, ...d.data()}));
+                
+                events.forEach(e => {
+                    const card = document.createElement('div');
+                    card.className = "bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-fuchsia-500/50 transition cursor-pointer group shadow-lg";
+                    card.onclick = () => openEventDetails(e);
+                    card.innerHTML = `
+                        <div class="w-12 h-12 bg-fuchsia-500/10 text-fuchsia-500 rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition"><i class="fas fa-calendar-check"></i></div>
+                        <h3 class="text-xl font-bold text-white mb-1">${e.name}</h3>
+                        <p class="text-sm text-zinc-400 mb-4"><i class="fas fa-map-marker-alt mr-1"></i>${e.location || 'N/A'}</p>
+                        <div class="flex items-center gap-2 text-xs text-zinc-500 font-bold uppercase"><i class="fas fa-users"></i> ${e.assignedCrew ? e.assignedCrew.length : 0} Crew Members</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) { console.error(err); grid.innerHTML = `<div class="text-rose-500">Error loading events</div>`; }
+        }
+
+        // 2. Add New Event
+        window.saveEvent = async () => {
+            const name = document.getElementById('newEventName').value;
+            const loc = document.getElementById('newEventLocation').value;
+            const crewRaw = document.getElementById('newEventCrew').value;
+            if(!name) return alert("කරුණාකර නම ලබා දෙන්න");
+
+            const btn = document.getElementById('btnSaveEvent');
+            btn.innerHTML = "සේව් වෙමින් පවතී..."; btn.disabled = true;
+
+            const crewArray = crewRaw.split(',').map(s => s.trim()).filter(s => s !== "");
+
+            try {
+                await addDoc(collection(db, "events"), {
+                    name: name,
+                    location: loc,
+                    assignedCrew: crewArray,
+                    createdAt: serverTimestamp()
+                });
+                closeModal('addEventModal');
+                loadEvents();
+            } catch (err) { console.error(err); alert("Error"); }
+            btn.innerHTML = "ඉවෙන්ට් එක සේව් කරන්න"; btn.disabled = false;
+        };
+
+        // 3. Open Event Details
+        function openEventDetails(e) {
+            activeEventId = e.id;
+            document.getElementById('detailEventName').innerText = e.name;
+            document.getElementById('detailEventLocation').innerHTML = `<i class="fas fa-map-marker-alt mr-2"></i>${e.location}`;
+            
+            const crewDiv = document.getElementById('detailEventCrew');
+            crewDiv.innerHTML = "";
+            if(e.assignedCrew && e.assignedCrew.length > 0) {
+                e.assignedCrew.forEach(c => {
+                    crewDiv.innerHTML += `<span class="bg-zinc-800 text-zinc-300 px-3 py-1 rounded-full text-xs font-bold border border-zinc-700"><i class="fas fa-user text-fuchsia-500 mr-1"></i>${c}</span>`;
+                });
+            } else { crewDiv.innerHTML = '<span class="text-zinc-500 text-xs">කාර්ය මණ්ඩලය අනුයුක්ත කර නැත.</span>'; }
+
+            showView('eventDetailsView');
+            loadEventShifts(e.id);
+            loadEventTasks(e.id);
+        }
+
+        // 4. Load Shift Logs for Event
+        async function loadEventShifts(eventId) {
+            const list = document.getElementById('eventShiftsList');
+            list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-zinc-500"></i></div>';
+            try {
+                // simple query, filter in memory to avoid index issues
+                const snap = await getDocs(collection(db, "shift_logs"));
+                let logs = [];
+                snap.forEach(d => {
+                    let data = d.data();
+                    if(data.eventId === eventId) logs.push({id: d.id, ...data});
+                });
+                
+                logs.sort((a,b) => b.timestamp - a.timestamp); // Sort newest first
+
+                list.innerHTML = "";
+                if(logs.length === 0) { list.innerHTML = '<div class="text-zinc-500 text-sm text-center">වාර්තා නොමැත</div>'; return; }
+
+                logs.forEach(log => {
+                    list.innerHTML += `
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex gap-4">
+                            <div class="flex flex-col gap-2 w-16">
+                                <div class="relative w-16 h-16 rounded overflow-hidden cursor-pointer border border-zinc-800 hover:border-fuchsia-500" onclick="viewImage('${log.setupPhoto}')">
+                                    <img src="${log.setupPhoto}" class="w-full h-full object-cover">
+                                    <div class="absolute bottom-0 w-full bg-black/80 text-[8px] text-center font-bold text-white py-0.5">SETUP</div>
+                                </div>
+                                <div class="relative w-16 h-16 rounded overflow-hidden cursor-pointer border border-zinc-800 hover:border-rose-500" onclick="viewImage('${log.packupPhoto}')">
+                                    <img src="${log.packupPhoto}" class="w-full h-full object-cover">
+                                    <div class="absolute bottom-0 w-full bg-black/80 text-[8px] text-center font-bold text-white py-0.5">PACKUP</div>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-white text-sm mb-1">${log.crewName}</h4>
+                                <p class="text-xs text-zinc-400 mb-2">${new Date(log.startTime).toLocaleString()} - ${new Date(log.endTime).toLocaleString()}</p>
+                                <div class="flex gap-2">
+                                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-hourglass-half"></i> ${log.hours}h</span>
+                                    <span class="bg-rose-500/10 text-rose-400 border border-rose-500/30 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-money-bill"></i> Rs.${log.expenses || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error(e); list.innerHTML = '<div class="text-rose-500 text-sm">Error loading logs</div>'; }
+        }
+
+        // 5. Load Tasks
+        function loadEventTasks(eventId) {
+            const list = document.getElementById('eventTasksList');
+            onSnapshot(collection(db, `events/${eventId}/deliverables`), (snap) => {
+                let tasks = [];
+                snap.forEach(d => tasks.push({id: d.id, ...d.data()}));
+                // Sort locally
+                tasks.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                
+                list.innerHTML = "";
+                if(tasks.length === 0) { list.innerHTML = '<div class="text-zinc-500 text-sm text-center">කාර්යයන් නොමැත</div>'; return; }
+
+                tasks.forEach(t => {
+                    let proofHtml = '';
+                    if(t.status !== 'new') {
+                        let links = t.submittedLink ? `<a href="${t.submittedLink}" target="_blank" class="text-blue-400 hover:underline text-xs block mb-2"><i class="fas fa-link mr-1"></i>${t.submittedLink}</a>` : '';
+                        let imgs = (t.photos || []).map(p => `<img src="${p}" onclick="viewImage('${p}')" class="w-10 h-10 object-cover rounded cursor-pointer border border-zinc-700 hover:border-white">`).join('');
+                        
+                        let actionBtn = t.status === 'pending_approval' 
+                            ? `<button onclick="approveTask('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded mt-3 shadow-lg">අනුමත කරන්න (Approve)</button>`
+                            : `<div class="mt-3 text-emerald-400 text-xs font-bold text-center bg-emerald-500/10 py-1.5 rounded border border-emerald-500/20"><i class="fas fa-check-double mr-1"></i> Approved</div>`;
+
+                        proofHtml = `<div class="mt-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+                                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-2">සාක්ෂි / ලිපිගොනු</p>
+                                        ${links}
+                                        <div class="flex gap-2">${imgs}</div>
+                                        ${actionBtn}
+                                     </div>`;
+                    }
+
+                    let statusBadge = t.status === 'new' ? '<span class="text-[10px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-zinc-700">නව (New)</span>' :
+                                      t.status === 'pending_approval' ? '<span class="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/30">අනුමත වනතුරු (Pending)</span>' :
+                                      '<span class="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded border border-emerald-500/30">සාර්ථකයි (Completed)</span>';
+
+                    list.innerHTML += `
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-white text-sm">${t.title}</h4>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-xs text-zinc-400">${t.description}</p>
+                            ${proofHtml}
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // 6. Add Task
+        window.saveTask = async () => {
+            const title = document.getElementById('newTaskTitle').value;
+            const desc = document.getElementById('newTaskDesc').value;
+            if(!title || !activeEventId) return;
+
+            const btn = document.getElementById('btnSaveTask');
+            btn.innerHTML = "එක් කරමින් පවතී..."; btn.disabled = true;
+            try {
+                await addDoc(collection(db, `events/${activeEventId}/deliverables`), {
+                    title: title, description: desc, status: 'new', createdAt: serverTimestamp()
+                });
+                closeModal('addTaskModal');
+            } catch(e) { console.error(e); alert("Error"); }
+            btn.innerHTML = "කාර්යය එක් කරන්න"; btn.disabled = false;
+        };
+
+        // 7. Approve Task
+        window.approveTask = async (taskId) => {
+            if(confirm("මෙය අනුමත කිරීමට අවශ්‍යද?")) {
+                try {
+                    await updateDoc(doc(db, `events/${activeEventId}/deliverables/${taskId}`), { status: 'completed' });
+                } catch(e) { console.error(e); alert("Error approving task"); }
+            }
+        }
+
+        // Init
+        loadEvents();
+    </script>
+</body>
+</html>
