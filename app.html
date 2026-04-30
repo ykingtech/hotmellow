@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="si">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,16 +8,14 @@
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#020617"> <!-- Dark background -->
+    <meta name="theme-color" content="#020617">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); }
+        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         input, select { font-size: 16px !important; }
-        
-        /* Custom scrollbar for a cleaner look */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -28,17 +26,15 @@
     <!-- Header -->
     <div class="bg-slate-900/90 backdrop-blur-md p-4 shadow-lg sticky top-0 z-20 flex justify-between items-center border-b border-slate-800">
         <div class="flex flex-col justify-center">
-            <!-- Logo replaced here -->
-            <img src="logo.png" alt="Hotmello Productions" class="h-6 sm:h-8 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]">
-            <p id="headerEventName" class="text-xs text-slate-400 hidden truncate max-w-[180px] mt-1">Loading...</p>
+            <img src="logo.png" alt="Hotmello Productions" class="h-6 sm:h-8 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" onerror="this.outerHTML='<h1 class=\'text-xl font-black text-orange-500 tracking-wider\'>HOTMELLO</h1>'">
+            <p id="headerEventName" class="text-xs text-slate-400 hidden truncate max-w-[180px] mt-1 font-medium">Loading...</p>
         </div>
         <div class="flex items-center gap-3">
             <button id="installAppBtn" class="hidden bg-orange-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)] transition">
-                <i class="fas fa-download mr-1"></i> ඇප් එක ගන්න
+                <i class="fas fa-download mr-1"></i> INSTALL
             </button>
-            
-            <button id="switchEventBtn" onclick="resetEvent()" class="hidden text-[10px] bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-md text-slate-300 active:bg-slate-700 transition">
-                වෙනස් කරන්න
+            <button id="switchEventBtn" onclick="resetEvent()" class="hidden text-[10px] bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition">
+                SWITCH EVENT
             </button>
             <div id="connectionStatus" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
         </div>
@@ -46,11 +42,14 @@
 
     <!-- Main Tabs -->
     <div id="mainTabs" class="flex border-b border-slate-800 bg-slate-900 hidden">
-        <button onclick="switchTab('shift')" id="tab-shift" class="flex-1 py-3 text-center text-orange-400 border-b-2 border-orange-500 font-bold transition text-xs uppercase tracking-widest active:bg-slate-800">
-            <i class="fas fa-clock mr-1"></i> වැඩ මුරය
+        <button onclick="switchTab('shift')" id="tab-shift" class="flex-1 py-3.5 text-center text-orange-400 border-b-2 border-orange-500 font-bold transition text-xs uppercase tracking-widest">
+            <i class="fas fa-clock mr-1"></i> Shift Log
         </button>
-        <button onclick="switchTab('tasks')" id="tab-tasks" class="flex-1 py-3 text-center text-slate-500 font-bold transition text-xs uppercase tracking-widest active:bg-slate-800">
-            <i class="fas fa-tasks mr-1"></i> කාර්යයන්
+        <button onclick="switchTab('equipment')" id="tab-equipment" class="flex-1 py-3.5 text-center text-slate-500 font-bold transition text-xs uppercase tracking-widest">
+            <i class="fas fa-camera mr-1"></i> Gear
+        </button>
+        <button onclick="switchTab('tasks')" id="tab-tasks" class="flex-1 py-3.5 text-center text-slate-500 font-bold transition text-xs uppercase tracking-widest">
+            <i class="fas fa-tasks mr-1"></i> Tasks
         </button>
     </div>
 
@@ -58,103 +57,112 @@
     <div class="flex-1 overflow-y-auto p-4 pb-24 relative">
         
         <!-- Event Selection View -->
-        <div id="eventSelectContainer" class="mt-8 px-2 animate-fade-in">
+        <div id="eventSelectContainer" class="mt-8 px-2 animate-fade-in max-w-md mx-auto">
             <div class="text-center mb-8">
                 <div class="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800 shadow-[0_0_20px_rgba(249,115,22,0.15)] relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-full h-full bg-orange-500/10 rounded-full blur-xl pointer-events-none"></div>
                     <i class="fas fa-calendar-alt text-4xl text-orange-500 relative z-10"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-white">ඉවෙන්ට් එක තෝරන්න</h2>
-                <p class="text-slate-500 text-sm mt-2">අද දිනට අදාල ඉවෙන්ට් එක තෝරන්න.</p>
+                <h2 class="text-2xl font-bold text-white tracking-wide">Select Event</h2>
+                <p class="text-slate-500 text-sm mt-2">Choose your assigned event for today.</p>
             </div>
             
             <div class="relative">
                 <i class="fas fa-search absolute left-4 top-4 text-slate-500"></i>
-                <input type="text" id="eventSearchInput" placeholder="ඉවෙන්ට් එක සොයන්න..." class="w-full bg-slate-900 pl-12 p-4 rounded-xl text-white border border-slate-800 focus:ring-2 focus:ring-orange-500 outline-none shadow-lg transition">
+                <input type="text" id="eventSearchInput" placeholder="Search events..." class="w-full bg-slate-900 pl-12 p-4 rounded-xl text-white border border-slate-800 focus:ring-2 focus:ring-orange-500 outline-none shadow-lg transition">
             </div>
             
             <div id="eventResultsList" class="mt-6 space-y-3 pb-10">
-                <div class="text-center text-slate-500 text-sm mt-8"><i class="fas fa-spinner fa-spin mr-2"></i>ඉවෙන්ට්ස් පූරණය වෙමින්...</div>
+                <div class="text-center text-slate-500 text-sm mt-8"><i class="fas fa-spinner fa-spin mr-2"></i>Loading Active Events...</div>
             </div>
         </div>
 
         <!-- App Content View -->
-        <div id="appContent" class="hidden mt-2">
+        <div id="appContent" class="hidden mt-2 max-w-lg mx-auto">
             
             <!-- Tab 1: Shift & Setup Log -->
             <div id="shiftSection">
-                <div class="glass-panel p-5 rounded-2xl shadow-2xl border border-slate-800 relative overflow-hidden">
-                    <!-- Background Glow -->
-                    <div class="absolute -top-10 -right-10 w-48 h-48 bg-orange-500/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="glass-panel p-5 rounded-2xl shadow-2xl relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                    <label class="text-[11px] text-orange-300 uppercase font-bold tracking-wider mb-2 block relative z-10">කණ්ඩායමේ සාමාජිකයා (Crew)</label>
+                    <label class="text-[10px] text-orange-400/80 uppercase font-bold tracking-widest mb-2 block relative z-10">Select Crew Member</label>
                     <div class="relative mb-6 z-10">
-                        <select id="crewSelect" class="w-full bg-slate-900 p-4 rounded-xl text-white text-base border border-slate-700 appearance-none focus:border-orange-500 outline-none shadow-inner">
-                            <option value="">සාමාජිකයා තෝරන්න...</option>
+                        <select id="crewSelect" class="w-full bg-slate-900/80 p-4 rounded-xl text-white text-base border border-slate-700 appearance-none focus:border-orange-500 outline-none shadow-inner font-medium">
+                            <option value="">Choose identity...</option>
                         </select>
-                        <i class="fas fa-user-astronaut absolute right-4 top-4 text-slate-500 pointer-events-none text-lg"></i>
+                        <i class="fas fa-chevron-down absolute right-4 top-5 text-slate-500 pointer-events-none text-sm"></i>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-6 relative z-10">
-                        <!-- Setup Photo -->
                         <div class="flex flex-col">
-                            <label class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider mb-2 block">Setup ඡායාරූපය</label>
-                            <label id="startBox" class="w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-pointer active:bg-slate-800 bg-slate-900/50 relative overflow-hidden transition-all hover:border-emerald-500/50">
+                            <label class="text-[10px] text-emerald-400 uppercase font-bold tracking-widest mb-2 block">Check-In Photo</label>
+                            <label id="startBox" class="w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800/50 relative overflow-hidden transition-all">
                                 <input type="file" id="startCameraInput" accept="image/*" capture="environment" class="hidden" disabled>
                                 <div id="startPlaceholder" class="flex flex-col items-center text-center p-2">
-                                    <i class="fas fa-boxes text-3xl text-emerald-500 mb-2"></i>
-                                    <span class="text-[11px] text-slate-400">පැමිණීම තහවුරු කරන්න</span>
+                                    <i class="fas fa-camera text-2xl text-slate-500 mb-2 group-hover:text-emerald-500 transition-colors"></i>
+                                    <span class="text-[10px] text-slate-400 font-medium">Tap to Snap</span>
                                 </div>
                                 <img id="startPreview" class="hidden absolute inset-0 w-full h-full object-cover">
-                                <div id="startTimeBadge" class="hidden absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur text-white text-[10px] text-center py-1.5 font-bold"></div>
+                                <div id="startTimeBadge" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur text-emerald-400 text-[10px] text-center py-1.5 font-bold tracking-wider border-t border-emerald-500/30"></div>
                             </label>
                         </div>
 
-                        <!-- Pack-up Photo -->
                         <div class="flex flex-col">
-                            <label class="text-[10px] text-rose-400 uppercase font-bold tracking-wider mb-2 block">Pack-up ඡායාරූපය</label>
-                            <label id="endBox" class="w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-not-allowed bg-slate-900/50 relative overflow-hidden opacity-50 transition-all">
+                            <label class="text-[10px] text-rose-400 uppercase font-bold tracking-widest mb-2 block">Check-Out Photo</label>
+                            <label id="endBox" class="w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-not-allowed opacity-50 relative overflow-hidden transition-all">
                                 <input type="file" id="endCameraInput" accept="image/*" capture="environment" class="hidden" disabled>
                                 <div id="endPlaceholder" class="flex flex-col items-center text-center p-2">
-                                    <i class="fas fa-truck-loading text-3xl text-rose-500 mb-2"></i>
-                                    <span class="text-[11px] text-slate-400">පිටවීම තහවුරු කරන්න</span>
+                                    <i class="fas fa-camera text-2xl text-slate-500 mb-2"></i>
+                                    <span class="text-[10px] text-slate-400 font-medium">Tap to Snap</span>
                                 </div>
                                 <img id="endPreview" class="hidden absolute inset-0 w-full h-full object-cover">
-                                <div id="endTimeBadge" class="hidden absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur text-white text-[10px] text-center py-1.5 font-bold"></div>
+                                <div id="endTimeBadge" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur text-rose-400 text-[10px] text-center py-1.5 font-bold tracking-wider border-t border-rose-500/30"></div>
                             </label>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-6 relative z-10">
                         <div>
-                            <label class="text-[10px] text-orange-300 uppercase font-bold tracking-wider mb-2 block">වැඩ කළ පැය ගණන</label>
-                            <input type="number" id="shiftHours" step="0.5" placeholder="0.0" class="w-full bg-slate-900 p-3 rounded-xl border border-slate-700 font-bold text-center text-lg text-amber-400 focus:border-orange-500 outline-none shadow-inner">
+                            <label class="text-[10px] text-orange-400/80 uppercase font-bold tracking-widest mb-2 block">Hours Logged</label>
+                            <input type="number" id="shiftHours" step="0.5" placeholder="0.0" class="w-full bg-slate-900/80 p-3.5 rounded-xl border border-slate-700 font-bold text-center text-lg text-white focus:border-orange-500 outline-none shadow-inner transition">
                         </div>
                         <div>
-                            <label class="text-[10px] text-orange-300 uppercase font-bold tracking-wider mb-2 block">අමතර වියදම් (රු.)</label>
-                            <input type="number" id="shiftExpenses" placeholder="0" class="w-full bg-slate-900 p-3 rounded-xl border border-slate-700 font-bold text-center text-lg text-white focus:border-orange-500 outline-none shadow-inner">
+                            <label class="text-[10px] text-orange-400/80 uppercase font-bold tracking-widest mb-2 block">Expenses (LKR)</label>
+                            <input type="number" id="shiftExpenses" placeholder="0" class="w-full bg-slate-900/80 p-3.5 rounded-xl border border-slate-700 font-bold text-center text-lg text-white focus:border-orange-500 outline-none shadow-inner transition">
                         </div>
                     </div>
 
-                    <button id="resetLogBtn" onclick="clearShiftLog()" class="hidden w-full mb-4 bg-transparent border border-rose-900/50 text-rose-400 hover:bg-rose-900/20 py-2.5 rounded-xl text-xs font-bold uppercase transition relative z-10">
-                        <i class="fas fa-undo-alt mr-1"></i> වාර්තාව මකා දමන්න
+                    <button id="resetLogBtn" onclick="clearShiftLog()" class="hidden w-full mb-4 bg-transparent border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition relative z-10">
+                        <i class="fas fa-undo-alt mr-2"></i> Reset Current Session
                     </button>
 
-                    <button id="uploadBtn" disabled class="relative z-10 w-full bg-slate-800 text-slate-500 py-4 rounded-xl font-bold text-base transition shadow-lg disabled:cursor-not-allowed flex justify-center items-center gap-2 active:scale-[0.98]">
-                        වාර්තාව යවන්න
+                    <button id="uploadBtn" disabled class="relative z-10 w-full bg-slate-800 text-slate-500 py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition shadow-lg disabled:cursor-not-allowed flex justify-center items-center gap-2 active:scale-[0.98]">
+                        Submit Shift Log
                     </button>
                 </div>
                 
                 <div class="mt-8">
-                    <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4 ml-1 flex items-center gap-2"><i class="fas fa-history"></i> මෑත ඉතිහාසය</h3>
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 ml-1 flex items-center gap-2"><i class="fas fa-history text-slate-600"></i> Recent Activity</h3>
                     <div id="historyList" class="space-y-3 pb-10"></div>
                 </div>
             </div>
 
-            <!-- Tab 2: Deliverables / Tasks -->
+            <!-- Tab 2: Equipment / Gear -->
+            <div id="equipmentSection" class="hidden">
+                <div class="glass-panel p-5 rounded-2xl shadow-xl mb-6">
+                    <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-clipboard-list text-orange-500"></i> Gear Checklist</h3>
+                    <p class="text-xs text-slate-400 mb-4 leading-relaxed">Ensure all equipment assigned to this event is checked in and checked out properly.</p>
+                    
+                    <div id="equipmentList" class="space-y-2">
+                        <div class="text-center py-6 text-slate-500"><i class="fas fa-spinner fa-spin text-xl"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Deliverables / Tasks -->
             <div id="tasksSection" class="hidden">
                 <div id="taskList" class="space-y-4 pb-10">
-                    <div class="text-center py-10">
+                    <div class="text-center py-10 text-slate-500">
                         <i class="fas fa-spinner fa-spin text-orange-500 text-3xl"></i>
                     </div>
                 </div>
@@ -164,59 +172,60 @@
 
     <!-- Task Completion Modal -->
     <div id="taskModal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col p-4 overflow-y-auto">
-        <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4 mt-4">
-            <h2 class="text-xl font-black text-white flex items-center"><i class="fas fa-check-double text-emerald-500 mr-2"></i> කාර්යය සම්පූර්ණ කිරීම</h2>
-            <button onclick="closeTaskModal()" class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 hover:text-white active:bg-slate-800 transition shadow-lg"><i class="fas fa-times text-lg"></i></button>
-        </div>
-        
-        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 mb-6 shadow-inner relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <h3 id="modalTaskTitle" class="text-lg text-orange-400 font-bold mb-2 relative z-10">Task Name</h3>
-            <p id="modalTaskDesc" class="text-sm text-slate-400 leading-relaxed relative z-10">Description...</p>
-        </div>
+        <div class="max-w-lg mx-auto w-full mt-4">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                <h2 class="text-lg font-black text-white tracking-wide flex items-center"><i class="fas fa-cloud-upload-alt text-emerald-500 mr-3 text-xl"></i> Submit Deliverable</h2>
+                <button onclick="closeTaskModal()" class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 hover:text-white transition shadow-lg border border-slate-800"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 mb-6 shadow-inner relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <h3 id="modalTaskTitle" class="text-base text-orange-400 font-bold mb-1 relative z-10">Task Name</h3>
+                <p id="modalTaskDesc" class="text-sm text-slate-400 leading-relaxed relative z-10">Description...</p>
+            </div>
 
-        <label class="text-[11px] text-orange-300 uppercase font-bold tracking-wider mb-2 block">Drive/YouTube ලින්ක් එක (ඇත්නම්)</label>
-        <input type="url" id="taskLink" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 text-white text-sm mb-6 focus:ring-2 focus:ring-emerald-500 outline-none placeholder-slate-600" placeholder="https://drive.google.com/...">
-        
-        <label class="text-[11px] text-orange-300 uppercase font-bold tracking-wider mb-2 block">සාක්ෂි ඡායාරූප (උපරිම 3යි)</label>
-        <div class="grid grid-cols-3 gap-3 mb-8">
-            <div class="aspect-square bg-slate-900 rounded-xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 active:bg-slate-800 relative overflow-hidden transition" onclick="document.getElementById('taskImg1').click()">
-                <input type="file" id="taskImg1" accept="image/*" class="hidden" onchange="previewTaskImg(this, 1)">
-                <img id="prev1" class="hidden w-full h-full object-cover">
-                <i id="icon1" class="fas fa-camera text-slate-600 text-2xl"></i>
+            <label class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2 block">Cloud Storage Link (Optional)</label>
+            <input type="url" id="taskLink" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 text-white text-sm mb-6 focus:ring-2 focus:ring-emerald-500 outline-none placeholder-slate-600 transition" placeholder="e.g. https://drive.google.com/...">
+            
+            <label class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2 block">Evidence Attachments (Max 3)</label>
+            <div class="grid grid-cols-3 gap-3 mb-8">
+                <div class="aspect-square bg-slate-900/50 rounded-xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-slate-900 relative overflow-hidden transition" onclick="document.getElementById('taskImg1').click()">
+                    <input type="file" id="taskImg1" accept="image/*" class="hidden" onchange="previewTaskImg(this, 1)">
+                    <img id="prev1" class="hidden w-full h-full object-cover">
+                    <i id="icon1" class="fas fa-plus text-slate-600 text-xl"></i>
+                </div>
+                <div class="aspect-square bg-slate-900/50 rounded-xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-slate-900 relative overflow-hidden transition" onclick="document.getElementById('taskImg2').click()">
+                    <input type="file" id="taskImg2" accept="image/*" class="hidden" onchange="previewTaskImg(this, 2)">
+                    <img id="prev2" class="hidden w-full h-full object-cover">
+                    <i id="icon2" class="fas fa-plus text-slate-600 text-xl"></i>
+                </div>
+                <div class="aspect-square bg-slate-900/50 rounded-xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-slate-900 relative overflow-hidden transition" onclick="document.getElementById('taskImg3').click()">
+                    <input type="file" id="taskImg3" accept="image/*" class="hidden" onchange="previewTaskImg(this, 3)">
+                    <img id="prev3" class="hidden w-full h-full object-cover">
+                    <i id="icon3" class="fas fa-plus text-slate-600 text-xl"></i>
+                </div>
             </div>
-            <div class="aspect-square bg-slate-900 rounded-xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 active:bg-slate-800 relative overflow-hidden transition" onclick="document.getElementById('taskImg2').click()">
-                <input type="file" id="taskImg2" accept="image/*" class="hidden" onchange="previewTaskImg(this, 2)">
-                <img id="prev2" class="hidden w-full h-full object-cover">
-                <i id="icon2" class="fas fa-plus text-slate-600 text-2xl"></i>
-            </div>
-            <div class="aspect-square bg-slate-900 rounded-xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 active:bg-slate-800 relative overflow-hidden transition" onclick="document.getElementById('taskImg3').click()">
-                <input type="file" id="taskImg3" accept="image/*" class="hidden" onchange="previewTaskImg(this, 3)">
-                <img id="prev3" class="hidden w-full h-full object-cover">
-                <i id="icon3" class="fas fa-plus text-slate-600 text-2xl"></i>
-            </div>
+            <button id="submitTaskBtn" onclick="submitTask()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold tracking-wide shadow-[0_4px_14px_0_rgba(16,185,129,0.2)] active:scale-[0.98] transition">
+                CONFIRM SUBMISSION
+            </button>
         </div>
-        <button id="submitTaskBtn" onclick="submitTask()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold text-lg shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] active:scale-[0.98] transition">
-            තහවුරු කරන්න
-        </button>
     </div>
 
-    <!-- Custom Toast Notification -->
-    <div id="toastMessage" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 z-[100] text-sm font-bold opacity-0 pointer-events-none flex items-center gap-2">
-        <i id="toastIcon" class="fas fa-info-circle"></i> <span id="toastText">Message</span>
+    <!-- UI Components -->
+    <div id="toastMessage" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 z-[100] text-sm font-bold opacity-0 pointer-events-none flex items-center gap-3 whitespace-nowrap border border-white/10">
+        <i id="toastIcon" class="fas fa-info-circle text-lg"></i> <span id="toastText">Message</span>
     </div>
 
-    <!-- Custom Confirm Modal -->
-    <div id="confirmModal" class="hidden fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="confirmModal" class="hidden fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-xs shadow-2xl text-center">
-            <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-question text-3xl text-orange-500"></i>
+            <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-700">
+                <i class="fas fa-question text-2xl text-orange-500"></i>
             </div>
-            <h3 class="text-lg font-bold text-white mb-2">තහවුරු කරන්න</h3>
-            <p id="confirmMsg" class="text-sm text-slate-400 mb-6">ඔබට විශ්වාසද?</p>
+            <h3 class="text-lg font-bold text-white mb-2">Confirmation Needed</h3>
+            <p id="confirmMsg" class="text-sm text-slate-400 mb-6 leading-relaxed">Are you sure you want to proceed?</p>
             <div class="flex gap-3">
-                <button onclick="confirmNo()" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold text-sm active:bg-slate-700">නැහැ</button>
-                <button onclick="confirmYes()" class="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg active:bg-orange-700">ඔව්</button>
+                <button onclick="confirmNo()" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold text-sm hover:bg-slate-700 transition">Cancel</button>
+                <button onclick="confirmYes()" class="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-orange-500 transition">Confirm</button>
             </div>
         </div>
     </div>
@@ -226,7 +235,6 @@
         import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, limit } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
-        // Keep existing firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyAuPT3k3JPOPx2jMYelNAEKietV-OVAWOI",
             authDomain: "hotmellow-labs.firebaseapp.com",
@@ -248,11 +256,11 @@
             const icon = document.getElementById('toastIcon');
             
             if (type === 'error') {
-                toast.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 z-[100] text-sm font-bold flex items-center gap-2 bg-rose-600 text-white";
-                icon.className = "fas fa-exclamation-triangle";
+                toast.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 z-[100] text-sm font-bold flex items-center gap-3 border border-white/10 bg-rose-600 text-white";
+                icon.className = "fas fa-exclamation-triangle text-lg";
             } else {
-                toast.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 z-[100] text-sm font-bold flex items-center gap-2 bg-emerald-600 text-slate-900";
-                icon.className = "fas fa-check-circle";
+                toast.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 z-[100] text-sm font-bold flex items-center gap-3 border border-white/10 bg-emerald-500 text-slate-950";
+                icon.className = "fas fa-check-circle text-lg";
             }
             
             toast.style.opacity = '1';
@@ -273,47 +281,50 @@
             });
         };
 
-        // --- PWA INSTALL LOGIC ---
+        // --- PWA ---
         let deferredPrompt;
         const installBtn = document.getElementById('installAppBtn');
         if (window.matchMedia('(display-mode: standalone)').matches) { installBtn.classList.add('hidden'); }
         window.addEventListener('beforeinstallprompt', (e) => { 
-            e.preventDefault(); 
-            deferredPrompt = e; 
-            if (!window.matchMedia('(display-mode: standalone)').matches) { installBtn.classList.remove('hidden'); } 
+            e.preventDefault(); deferredPrompt = e; 
+            if (!window.matchMedia('(display-mode: standalone)').matches) installBtn.classList.remove('hidden'); 
         });
         installBtn.addEventListener('click', async () => { 
             if (deferredPrompt) { 
                 deferredPrompt.prompt(); 
                 const { outcome } = await deferredPrompt.userChoice; 
-                if (outcome === 'accepted') { installBtn.classList.add('hidden'); } 
+                if (outcome === 'accepted') installBtn.classList.add('hidden'); 
                 deferredPrompt = null; 
             } 
         });
 
-        // --- UI HELPERS ---
+        // --- Navigation ---
         window.switchTab = (tab) => {
-            document.querySelectorAll('[id^="tab-"]').forEach(el => { 
-                el.classList.replace('text-orange-400', 'text-slate-500'); 
-                el.classList.remove('border-b-2', 'border-orange-500'); 
+            ['shift', 'tasks', 'equipment'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if(btn) {
+                    btn.classList.replace('text-orange-400', 'text-slate-500'); 
+                    btn.classList.remove('border-b-2', 'border-orange-500');
+                }
+                const sec = document.getElementById(`${t}Section`);
+                if(sec) sec.classList.toggle('hidden', tab !== t);
             });
             const active = document.getElementById(`tab-${tab}`); 
-            active.classList.replace('text-slate-500', 'text-orange-400'); 
-            active.classList.add('border-b-2', 'border-orange-500');
-            document.getElementById('shiftSection').classList.toggle('hidden', tab !== 'shift');
-            document.getElementById('tasksSection').classList.toggle('hidden', tab !== 'tasks');
+            if(active){
+                active.classList.replace('text-slate-500', 'text-orange-400'); 
+                active.classList.add('border-b-2', 'border-orange-500');
+            }
         };
 
         window.resetEvent = async () => { 
-            const confirmReset = await showConfirm("ඉවෙන්ට් එක මාරු කරන්න අවශ්‍යද?");
-            if(confirmReset) { 
+            if(await showConfirm("Switch to a different event?")) { 
                 localStorage.removeItem('site_event_id'); 
                 localStorage.removeItem('site_event_name'); 
                 location.reload(); 
             } 
         };
 
-        // --- DATA LOADING ---
+        // --- Data Loading ---
         const crewSelect = document.getElementById('crewSelect');
         const eventSearchInput = document.getElementById('eventSearchInput');
         const eventListDiv = document.getElementById('eventResultsList');
@@ -321,11 +332,7 @@
         let activeTaskId = null;
 
         async function initData() {
-            try {
-                await signInAnonymously(auth);
-            } catch (authErr) {
-                console.error("Auth init failed", authErr);
-            }
+            try { await signInAnonymously(auth); } catch (e) { console.error("Auth", e); }
 
             const lockedId = localStorage.getItem('site_event_id');
             const lockedName = localStorage.getItem('site_event_name');
@@ -340,19 +347,14 @@
                 loadEventData(lockedId);
             } else {
                 try {
-                    // Changed from 'projects' to 'events' collection
-                    const q = query(collection(db, "events"), orderBy("name"));
+                    const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
                     const snapshot = await getDocs(q);
                     allEvents = [];
                     snapshot.forEach(doc => allEvents.push({id: doc.id, ...doc.data()}));
                     renderEventList(allEvents);
                 } catch(e) { 
-                    console.error("Event Load Error:", e); 
-                    let errorMsg = 'ඉවෙන්ට් දත්ත ලබාගැනීමේ දෝෂයක්. කරුණාකර අන්තර්ජාල සබඳතාවය පරීක්ෂා කරන්න.';
-                    if (e.message && e.message.includes('permission')) {
-                        errorMsg = 'Permission Denied: කරුණාකර Firebase Firestore Rules "allow read, write: if true;" ලෙස සකසා Publish කර ඇති දැයි තහවුරු කරගන්න.';
-                    }
-                    eventListDiv.innerHTML = `<div class="text-rose-500 text-center text-sm bg-rose-500/10 p-4 rounded-xl border border-rose-500/20 shadow-lg"><i class="fas fa-exclamation-triangle mb-2 text-2xl"></i><br>${errorMsg}</div>`; 
+                    console.error("Load Error:", e); 
+                    eventListDiv.innerHTML = `<div class="text-rose-500 text-center text-sm bg-rose-500/10 p-4 rounded-xl border border-rose-500/20"><i class="fas fa-exclamation-triangle mb-2 text-2xl"></i><br>Connection Error or Permission Denied.</div>`; 
                 }
             }
         }
@@ -367,21 +369,20 @@
         function renderEventList(list) {
             eventListDiv.innerHTML = "";
             if(list.length === 0) { 
-                eventListDiv.innerHTML = '<div class="text-slate-500 text-center text-sm p-4 border border-dashed border-slate-700 rounded-xl">ඉවෙන්ට් එකක් හමුවූයේ නැත.</div>'; 
+                eventListDiv.innerHTML = '<div class="text-slate-500 text-center text-sm p-6 border border-dashed border-slate-700 rounded-xl">No active events found.</div>'; 
                 return; 
             }
             list.forEach(p => {
                 const el = document.createElement('div');
-                el.className = "bg-slate-900 p-5 rounded-2xl border border-slate-800 flex justify-between items-center active:bg-slate-800 hover:border-orange-500/50 transition cursor-pointer shadow-sm";
+                el.className = "bg-slate-900/80 p-5 rounded-2xl border border-slate-800 flex justify-between items-center hover:border-orange-500/50 transition cursor-pointer shadow-sm group";
                 el.onclick = () => selectEvent(p.id, p.name);
-                el.innerHTML = `<div><h4 class="text-white font-bold text-lg">${p.name}</h4><p class="text-xs text-orange-400 mt-1"><i class="fas fa-map-marker-alt mr-1"></i>${p.location || 'Location N/A'}</p></div><div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center"><i class="fas fa-chevron-right text-slate-400"></i></div>`;
+                el.innerHTML = `<div><h4 class="text-white font-bold text-base group-hover:text-orange-400 transition">${p.name}</h4><p class="text-xs text-slate-400 mt-1"><i class="fas fa-map-marker-alt mr-1 text-orange-500/70"></i>${p.location || 'Location N/A'}</p></div><div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-orange-500/20 transition"><i class="fas fa-chevron-right text-slate-400 group-hover:text-orange-500"></i></div>`;
                 eventListDiv.appendChild(el);
             });
         }
 
         async function selectEvent(eid, ename) {
-            const confirmSelection = await showConfirm(`${ename} තෝරන්න අවශ්‍යද?`);
-            if(confirmSelection) {
+            if(await showConfirm(`Connect to ${ename}?`)) {
                 localStorage.setItem('site_event_id', eid);
                 localStorage.setItem('site_event_name', ename);
                 location.reload();
@@ -389,81 +390,93 @@
         }
 
         async function loadEventData(eid) {
+            onSnapshot(doc(db, "events", eid), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const crew = data.assignedCrew || [];
+                    const equipment = data.equipment || [];
+                    
+                    const currentVal = crewSelect.value;
+                    crewSelect.innerHTML = '<option value="">Choose identity...</option>';
+                    crew.forEach(c => {
+                        const opt = document.createElement('option'); opt.value = c; opt.text = c;
+                        crewSelect.appendChild(opt);
+                    });
+                    if(currentVal) crewSelect.value = currentVal;
+                    
+                    renderEquipmentList(eid, equipment);
+                }
+            });
+            loadShiftHistory(eid);
+            loadTasks(eid);
+        }
+
+        // --- Equipment Tracker ---
+        function renderEquipmentList(eventId, items) {
+            const list = document.getElementById('equipmentList');
+            if(!items || items.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-slate-500 text-sm border border-dashed border-slate-700 rounded-xl">No gear assigned to this event.</div>`;
+                return;
+            }
+            
+            list.innerHTML = "";
+            items.forEach((item, index) => {
+                const isChecked = item.status === 'checked';
+                const el = document.createElement('div');
+                el.className = `flex justify-between items-center p-4 rounded-xl border transition cursor-pointer ${isChecked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}`;
+                el.onclick = () => toggleEquipment(eventId, items, index);
+                
+                el.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-md border ${isChecked ? 'bg-emerald-500 border-emerald-500 text-slate-900 flex items-center justify-center' : 'border-slate-600 bg-slate-800'} transition">
+                            ${isChecked ? '<i class="fas fa-check text-xs"></i>' : ''}
+                        </div>
+                        <span class="font-medium text-sm ${isChecked ? 'text-emerald-400 line-through opacity-70' : 'text-white'}">${item.name}</span>
+                    </div>
+                    <i class="fas fa-box text-slate-600 text-sm"></i>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        async function toggleEquipment(eventId, currentItems, index) {
+            const itemsCopy = [...currentItems];
+            itemsCopy[index].status = itemsCopy[index].status === 'checked' ? 'pending' : 'checked';
             try {
-                // Read from 'events' collection
-                onSnapshot(doc(db, "events", eid), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const crew = docSnap.data().assignedCrew || [];
-                        const currentVal = crewSelect.value;
-                        crewSelect.innerHTML = '<option value="">සාමාජිකයා තෝරන්න...</option>';
-                        crew.forEach(c => {
-                            const opt = document.createElement('option'); opt.value = c; opt.text = c;
-                            crewSelect.appendChild(opt);
-                        });
-                        if(currentVal) crewSelect.value = currentVal;
-                    }
-                });
-                loadShiftHistory(eid);
-                loadTasks(eid);
-            } catch(e) { console.error("Data Load Error", e); }
+                await updateDoc(doc(db, "events", eventId), { equipment: itemsCopy });
+            } catch(e) { console.error("Update equipment error", e); }
         }
 
-        // --- STATE MANAGEMENT ---
-        function getActiveLogs() {
-            return JSON.parse(localStorage.getItem('site_active_logs') || '{}');
-        }
-        
-        function saveLogState(crewName, data) {
-            let logs = getActiveLogs();
-            logs[crewName] = data;
-            localStorage.setItem('site_active_logs', JSON.stringify(logs));
-        }
-        
-        function removeLogState(crewName) {
-            let logs = getActiveLogs();
-            delete logs[crewName];
-            localStorage.setItem('site_active_logs', JSON.stringify(logs));
-        }
+        // --- Shift Log ---
+        function getActiveLogs() { return JSON.parse(localStorage.getItem('site_active_logs') || '{}'); }
+        function saveLogState(cName, data) { let logs = getActiveLogs(); logs[cName] = data; localStorage.setItem('site_active_logs', JSON.stringify(logs)); }
+        function removeLogState(cName) { let logs = getActiveLogs(); delete logs[cName]; localStorage.setItem('site_active_logs', JSON.stringify(logs)); }
 
-        let currentStartImg = null;
-        let currentEndImg = null;
-        let currentStartTime = null;
-        let currentEndTime = null;
+        let currentStartImg = null, currentEndImg = null, currentStartTime = null, currentEndTime = null;
 
-        crewSelect.addEventListener('change', () => {
-            updateUIForCrew();
-        });
+        crewSelect.addEventListener('change', updateUIForCrew);
 
         function updateUIForCrew() {
             const cName = crewSelect.value;
-            const startBox = document.getElementById('startBox');
-            const endBox = document.getElementById('endBox');
-            const startInput = document.getElementById('startCameraInput');
-            const endInput = document.getElementById('endCameraInput');
-            const resetBtn = document.getElementById('resetLogBtn');
-            const uploadBtn = document.getElementById('uploadBtn');
+            const startBox = document.getElementById('startBox'), endBox = document.getElementById('endBox');
+            const startInput = document.getElementById('startCameraInput'), endInput = document.getElementById('endCameraInput');
+            const resetBtn = document.getElementById('resetLogBtn'), uploadBtn = document.getElementById('uploadBtn');
             
-            document.getElementById('startPreview').classList.add('hidden');
-            document.getElementById('startPlaceholder').classList.remove('hidden');
-            document.getElementById('startTimeBadge').classList.add('hidden');
-            startBox.classList.remove('border-emerald-500');
+            ['start', 'end'].forEach(pref => {
+                document.getElementById(`${pref}Preview`).classList.add('hidden');
+                document.getElementById(`${pref}Placeholder`).classList.remove('hidden');
+                document.getElementById(`${pref}TimeBadge`).classList.add('hidden');
+            });
             
-            document.getElementById('endPreview').classList.add('hidden');
-            document.getElementById('endPlaceholder').classList.remove('hidden');
-            document.getElementById('endTimeBadge').classList.add('hidden');
-            endBox.classList.remove('border-rose-500');
-            endBox.classList.add('opacity-50', 'cursor-not-allowed');
+            startBox.className = "w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800/50 relative overflow-hidden transition-all";
+            endBox.className = "w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-not-allowed opacity-50 relative overflow-hidden transition-all bg-slate-900/50";
             
-            document.getElementById('shiftHours').value = "";
+            document.getElementById('shiftHours').value = ""; document.getElementById('shiftExpenses').value = "";
             currentStartImg = null; currentEndImg = null; currentStartTime = null; currentEndTime = null;
             
-            if(!cName) {
-                startInput.disabled = true; endInput.disabled = true;
-                return;
-            }
+            if(!cName) { startInput.disabled = true; endInput.disabled = true; return; }
 
-            const logs = getActiveLogs();
-            const logData = logs[cName];
+            const logData = getActiveLogs()[cName];
 
             if(logData) {
                 currentStartTime = new Date(logData.startTime);
@@ -472,136 +485,101 @@
                 document.getElementById('startPreview').src = currentStartImg;
                 document.getElementById('startPreview').classList.remove('hidden');
                 document.getElementById('startPlaceholder').classList.add('hidden');
-                document.getElementById('startTimeBadge').innerText = currentStartTime.toLocaleTimeString();
+                document.getElementById('startTimeBadge').innerText = currentStartTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById('startTimeBadge').classList.remove('hidden');
-                startBox.classList.add('border-emerald-500');
+                startBox.classList.add('border-emerald-500', 'bg-emerald-500/5');
                 
-                startInput.disabled = true;
-                endInput.disabled = false;
-                endBox.classList.remove('opacity-50', 'cursor-not-allowed');
+                startInput.disabled = true; endInput.disabled = false;
+                endBox.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-900/50');
+                endBox.classList.add('cursor-pointer', 'hover:bg-slate-800/50');
                 resetBtn.classList.remove('hidden');
             } else {
-                startInput.disabled = false;
-                endInput.disabled = true;
+                startInput.disabled = false; endInput.disabled = true;
                 resetBtn.classList.add('hidden');
             }
             
             uploadBtn.disabled = true;
-            uploadBtn.classList.replace('bg-orange-600', 'bg-slate-800');
-            uploadBtn.classList.replace('text-white', 'text-slate-500');
-            uploadBtn.innerHTML = "වාර්තාව යවන්න";
+            uploadBtn.className = "relative z-10 w-full bg-slate-800 text-slate-500 py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition shadow-lg disabled:cursor-not-allowed flex justify-center items-center gap-2 active:scale-[0.98]";
         }
 
         document.getElementById('startCameraInput').addEventListener('change', async (e) => {
-            const cName = crewSelect.value;
-            if(!cName) return;
-            if(e.target.files[0]) {
-                const file = e.target.files[0];
-                const b64 = await processImage(file);
-                const time = new Date().getTime();
-                saveLogState(cName, { startTime: time, startImg: b64 });
-                updateUIForCrew();
-                showToast('පැමිණීම සටහන් කරගන්නා ලදී');
-            }
+            if(!crewSelect.value || !e.target.files[0]) return;
+            const b64 = await processImage(e.target.files[0]);
+            saveLogState(crewSelect.value, { startTime: new Date().getTime(), startImg: b64 });
+            updateUIForCrew();
+            showToast('Checked in successfully!');
         });
 
         document.getElementById('endCameraInput').addEventListener('change', async (e) => {
-            if(e.target.files[0]) {
-                const file = e.target.files[0];
-                currentEndImg = await processImage(file);
-                currentEndTime = new Date();
-                
-                document.getElementById('endPreview').src = currentEndImg;
-                document.getElementById('endPreview').classList.remove('hidden');
-                document.getElementById('endPlaceholder').classList.add('hidden');
-                document.getElementById('endTimeBadge').innerText = currentEndTime.toLocaleTimeString();
-                document.getElementById('endTimeBadge').classList.remove('hidden');
-                document.getElementById('endBox').classList.add('border-rose-500');
+            if(!e.target.files[0]) return;
+            currentEndImg = await processImage(e.target.files[0]);
+            currentEndTime = new Date();
+            
+            document.getElementById('endPreview').src = currentEndImg;
+            document.getElementById('endPreview').classList.remove('hidden');
+            document.getElementById('endPlaceholder').classList.add('hidden');
+            document.getElementById('endTimeBadge').innerText = currentEndTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('endTimeBadge').classList.remove('hidden');
+            document.getElementById('endBox').classList.add('border-rose-500', 'bg-rose-500/5');
 
-                const diffMs = currentEndTime - currentStartTime;
-                const hours = diffMs / (1000 * 60 * 60);
-                document.getElementById('shiftHours').value = hours.toFixed(1);
+            const hours = (currentEndTime - currentStartTime) / (1000 * 60 * 60);
+            document.getElementById('shiftHours').value = hours.toFixed(1);
 
-                const btn = document.getElementById('uploadBtn');
-                btn.disabled = false; 
-                btn.classList.replace('bg-slate-800', 'bg-orange-600'); 
-                btn.classList.replace('text-slate-500', 'text-white');
-                showToast('පිටවීම සටහන් කරගන්නා ලදී');
-            }
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = false; 
+            btn.classList.replace('bg-slate-800', 'bg-orange-600'); 
+            btn.classList.replace('text-slate-500', 'text-white');
+            btn.classList.add('shadow-[0_4px_15px_rgba(234,88,12,0.4)]');
+            showToast('Checked out! Ready to submit.');
         });
 
         window.clearShiftLog = async () => {
-            const cName = crewSelect.value;
-            const confirmed = await showConfirm(`මෙම වාර්තාව මකා දැමීමට අවශ්‍යද?`);
-            if(confirmed) {
-                removeLogState(cName);
-                updateUIForCrew();
+            if(await showConfirm(`Reset current session for ${crewSelect.value}?`)) {
+                removeLogState(crewSelect.value); updateUIForCrew();
             }
         }
 
         document.getElementById('uploadBtn').addEventListener('click', async () => {
             const btn = document.getElementById('uploadBtn');
-            const eid = localStorage.getItem('site_event_id');
-            const ename = localStorage.getItem('site_event_name');
-            const cName = crewSelect.value;
-            const hours = document.getElementById('shiftHours').value;
-            const expenses = document.getElementById('shiftExpenses').value;
+            const cName = crewSelect.value, hours = document.getElementById('shiftHours').value, expenses = document.getElementById('shiftExpenses').value;
+            if(!cName || !currentStartImg || !currentEndImg || !hours) return showToast("Incomplete log data.", "error");
             
-            if(!cName || !currentStartImg || !currentEndImg || !hours) {
-                return showToast("කරුණාකර සියලුම දත්ත ඇතුලත් කරන්න", "error");
-            }
-            
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> යවමින් පවතී...'; btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Submitting...'; btn.disabled = true;
             try {
-                // Save to 'shift_logs' collection instead of 'meter_readings'
                 await addDoc(collection(db, "shift_logs"), {
-                    eventId: eid, 
-                    eventName: ename, 
-                    crewName: cName,
-                    setupPhoto: currentStartImg,
-                    packupPhoto: currentEndImg,
-                    startTime: currentStartTime,
-                    endTime: currentEndTime,
-                    timestamp: serverTimestamp(), 
-                    status: "pending",
-                    hours: parseFloat(hours), 
-                    expenses: expenses ? parseFloat(expenses) : 0
+                    eventId: localStorage.getItem('site_event_id'), 
+                    eventName: localStorage.getItem('site_event_name'), 
+                    crewName: cName, setupPhoto: currentStartImg, packupPhoto: currentEndImg,
+                    startTime: currentStartTime, endTime: currentEndTime, timestamp: serverTimestamp(), 
+                    status: "pending", hours: parseFloat(hours), expenses: expenses ? parseFloat(expenses) : 0
                 });
-                
-                removeLogState(cName);
-                showToast("සාර්ථකව වාර්තාව යවන ලදී!"); 
-                updateUIForCrew();
-            } catch(e) { 
-                console.error(e); 
-                showToast("දෝෂයක් සිදුවිය!", "error"); 
-                btn.disabled = false; 
-                btn.innerHTML = "වාර්තාව යවන්න"; 
-            }
+                removeLogState(cName); showToast("Shift log submitted!"); updateUIForCrew();
+            } catch(e) { console.error(e); showToast("Failed to submit", "error"); btn.disabled = false; }
+            btn.innerHTML = "Submit Shift Log";
         });
 
         function loadShiftHistory(eid) {
             onSnapshot(query(collection(db, "shift_logs"), where("eventId", "==", eid), orderBy("timestamp", "desc"), limit(10)), (snap) => {
                 const list = document.getElementById('historyList'); list.innerHTML = "";
+                if(snap.empty) { list.innerHTML = `<div class="text-center py-4 text-xs text-slate-600">No recent activity.</div>`; return; }
+                
                 snap.forEach(d => {
                     const data = d.data();
-                    const statusColor = data.status === 'approved' ? 'text-emerald-400 border-emerald-500/50 bg-emerald-500/10' : 'text-amber-400 border-amber-500/50 bg-amber-500/10';
-                    const icon = data.status === 'approved' ? 'fa-check-circle' : 'fa-clock';
+                    const statusConfig = data.status === 'approved' ? { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: 'fa-check-circle' } : { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: 'fa-clock' };
                     list.innerHTML += `
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 flex gap-4 items-center shadow-sm">
-                        <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 flex gap-4 items-center shadow-sm">
+                        <div class="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0">
                             <img src="${data.setupPhoto}" class="w-full h-full object-cover">
-                            <div class="absolute bottom-0 w-full bg-black/60 text-[8px] text-center text-white py-0.5">SETUP</div>
+                            <div class="absolute bottom-0 w-full bg-slate-950/80 text-[8px] text-center font-bold text-slate-300 py-0.5 border-t border-slate-700">IN</div>
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start mb-1">
                                 <h4 class="font-bold text-white text-sm truncate pr-2">${data.crewName}</h4>
-                                <span class="text-[9px] border px-2 py-0.5 rounded-md uppercase font-bold flex items-center gap-1 whitespace-nowrap ${statusColor}">
-                                    <i class="fas ${icon}"></i> ${data.status}
-                                </span>
+                                <span class="text-[9px] border px-2 py-0.5 rounded uppercase font-bold flex items-center gap-1 ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}"><i class="fas ${statusConfig.icon}"></i> ${data.status}</span>
                             </div>
-                            <div class="flex justify-between items-center text-xs text-slate-400">
-                                <span class="bg-slate-800 px-2 py-1 rounded text-orange-300"><i class="fas fa-hourglass-half text-[10px]"></i> ${data.hours}h</span>
-                                <span class="font-bold text-slate-300 border-b border-slate-700 border-dashed">වියදම්: රු.${data.expenses ? data.expenses.toLocaleString() : '0'}</span>
+                            <div class="flex items-center gap-3 text-xs text-slate-400 mt-2 font-medium">
+                                <span class="flex items-center gap-1"><i class="fas fa-hourglass-half text-slate-500"></i> ${data.hours}h</span>
+                                ${data.expenses ? `<span class="flex items-center gap-1"><i class="fas fa-coins text-slate-500"></i> Rs.${data.expenses.toLocaleString()}</span>` : ''}
                             </div>
                         </div>
                     </div>`;
@@ -609,114 +587,64 @@
             });
         }
 
-        // --- TASKS / DELIVERABLES SECTION ---
+        // --- Tasks ---
         function loadTasks(eid) {
             onSnapshot(query(collection(db, `events/${eid}/deliverables`), orderBy("createdAt", "desc")), (snap) => {
                 const list = document.getElementById('taskList'); list.innerHTML = "";
-                if(snap.empty) { 
-                    list.innerHTML = "<div class='text-center text-slate-600 py-16'><i class='fas fa-clipboard-check text-5xl mb-4 opacity-20'></i><p class='text-sm'>ලබා දී ඇති කාර්යයන් නොමැත.</p></div>"; 
-                    return; 
-                }
+                if(snap.empty) { list.innerHTML = "<div class='text-center text-slate-500 py-16'><i class='fas fa-clipboard-check text-5xl mb-4 opacity-20'></i><p class='text-sm'>No deliverables assigned.</p></div>"; return; }
                 snap.forEach(d => {
-                    const t = d.data();
-                    const status = t.status || 'new'; 
+                    const t = d.data(), status = t.status || 'new'; 
                     let btnHTML = "";
+                    if(status === 'new') btnHTML = `<button onclick="openTaskModal('${d.id}', '${t.title}', '${t.description}')" class="w-full mt-4 py-3 rounded-xl font-bold text-sm bg-orange-600/90 text-white hover:bg-orange-500 shadow-lg transition flex justify-center items-center gap-2">COMPLETE TASK <i class="fas fa-arrow-right"></i></button>`;
+                    else if (status === 'pending_approval') btnHTML = `<div class="mt-4 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-center text-amber-400 text-xs font-bold uppercase tracking-wider"><i class="fas fa-spinner fa-spin mr-2"></i>Under Review</div>`;
+                    else if (status === 'completed') btnHTML = `<div class="mt-4 bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-center text-emerald-400 text-xs font-bold uppercase tracking-wider"><i class="fas fa-check-double mr-2"></i>Approved</div>`;
                     
-                    if(status === 'new') {
-                        btnHTML = `<button onclick="openTaskModal('${d.id}', '${t.title}', '${t.description}')" class="w-full mt-4 py-3 rounded-xl font-bold text-sm bg-orange-600 text-white active:bg-orange-700 shadow-lg shadow-orange-900/30 transition hover:bg-orange-500 flex justify-center items-center gap-2">සම්පූර්ණ කරන්න <i class="fas fa-arrow-right"></i></button>`;
-                    } else if (status === 'pending_approval') {
-                        btnHTML = `<div class="mt-4 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-center text-amber-400 text-xs font-bold uppercase tracking-wider"><i class="fas fa-spinner fa-spin mr-2"></i>අනුමත වනතුරු රැඳීසිටී</div>`;
-                    } else if (status === 'completed') {
-                        btnHTML = `<div class="mt-4 bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-center text-emerald-400 text-xs font-bold uppercase tracking-wider"><i class="fas fa-check-double mr-2"></i>සාර්ථකයි</div>`;
-                    }
-                    
-                    const el = document.createElement('div');
-                    el.className = "bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden shadow-sm";
-                    if(status === 'completed') el.classList.add('opacity-50');
-                    
-                    el.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-bold text-lg text-slate-100">${t.title}</h3>
-                        ${status === 'completed' ? '<i class="fas fa-check-circle text-emerald-500 text-xl shadow-[0_0_10px_rgba(16,185,129,0.5)] rounded-full"></i>' : '<i class="fas fa-tasks text-slate-700 text-xl"></i>'}
-                    </div>
-                    <p class="text-sm text-slate-400 leading-relaxed">${t.description || 'විස්තර ලබා දී නොමැත.'}</p>
-                    ${btnHTML}`;
-                    
-                    list.appendChild(el);
+                    list.innerHTML += `
+                    <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 shadow-sm ${status==='completed'?'opacity-60':''}">
+                        <div class="flex justify-between items-start mb-2"><h3 class="font-bold text-lg text-slate-100">${t.title}</h3>${status==='completed'?'<i class="fas fa-check-circle text-emerald-500 text-xl"></i>':'<i class="fas fa-tasks text-slate-600 text-lg"></i>'}</div>
+                        <p class="text-sm text-slate-400 leading-relaxed">${t.description || 'No description.'}</p>${btnHTML}
+                    </div>`;
                 });
             });
         }
 
         window.openTaskModal = (tid, title, desc) => {
-            activeTaskId = tid;
-            document.getElementById('modalTaskTitle').innerText = title;
-            document.getElementById('modalTaskDesc').innerText = desc;
-            document.getElementById('taskModal').classList.remove('hidden');
-            document.getElementById('taskLink').value = "";
-            ['1','2','3'].forEach(i => {
-                document.getElementById(`prev${i}`).classList.add('hidden');
-                document.getElementById(`icon${i}`).classList.remove('hidden');
-                document.getElementById(`taskImg${i}`).value = "";
-                delete document.getElementById(`taskImg${i}`).dataset.b64;
-            });
+            activeTaskId = tid; document.getElementById('modalTaskTitle').innerText = title; document.getElementById('modalTaskDesc').innerText = desc;
+            document.getElementById('taskModal').classList.remove('hidden'); document.getElementById('taskLink').value = "";
+            ['1','2','3'].forEach(i => { document.getElementById(`prev${i}`).classList.add('hidden'); document.getElementById(`icon${i}`).classList.remove('hidden'); document.getElementById(`taskImg${i}`).value = ""; delete document.getElementById(`taskImg${i}`).dataset.b64; });
         };
-        
         window.closeTaskModal = () => document.getElementById('taskModal').classList.add('hidden');
 
         window.previewTaskImg = async (input, idx) => {
             if(input.files[0]) {
                 const b64 = await processImage(input.files[0]);
-                document.getElementById(`prev${idx}`).src = b64;
-                document.getElementById(`prev${idx}`).classList.remove('hidden');
-                document.getElementById(`icon${idx}`).classList.add('hidden');
-                input.dataset.b64 = b64; 
+                document.getElementById(`prev${idx}`).src = b64; document.getElementById(`prev${idx}`).classList.remove('hidden');
+                document.getElementById(`icon${idx}`).classList.add('hidden'); input.dataset.b64 = b64; 
             }
         };
 
         window.submitTask = async () => {
             const link = document.getElementById('taskLink').value;
-            const photos = [];
-            if(document.getElementById('taskImg1').dataset.b64) photos.push(document.getElementById('taskImg1').dataset.b64);
-            if(document.getElementById('taskImg2').dataset.b64) photos.push(document.getElementById('taskImg2').dataset.b64);
-            if(document.getElementById('taskImg3').dataset.b64) photos.push(document.getElementById('taskImg3').dataset.b64);
+            const photos = ['1','2','3'].map(i => document.getElementById(`taskImg${i}`).dataset.b64).filter(Boolean);
+            if(!link && photos.length === 0) return showToast("Provide a link or upload photo evidence.", "error");
             
-            if(!link && photos.length === 0) return showToast("කරුණාකර ලින්ක් එකක් හෝ ඡායාරූපයක් ඇතුලත් කරන්න.", "error");
-            
-            const btn = document.getElementById('submitTaskBtn');
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> යවමින් පවතී..."; btn.disabled = true;
+            const btn = document.getElementById('submitTaskBtn'); btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> Submitting..."; btn.disabled = true;
             try {
-                const eid = localStorage.getItem('site_event_id');
-                // Save task completion info
-                await updateDoc(doc(db, `events/${eid}/deliverables/${activeTaskId}`), {
-                    status: 'pending_approval', 
-                    submittedLink: link, 
-                    photos: photos, 
-                    submittedAt: serverTimestamp()
-                });
-                showToast("සාර්ථකව යවන ලදී!");
-                closeTaskModal();
-            } catch(e) { 
-                console.error(e); 
-                showToast("දෝෂයක් සිදුවිය!", "error"); 
-            }
-            btn.innerHTML = "තහවුරු කරන්න"; btn.disabled = false;
+                await updateDoc(doc(db, `events/${localStorage.getItem('site_event_id')}/deliverables/${activeTaskId}`), { status: 'pending_approval', submittedLink: link, photos: photos, submittedAt: serverTimestamp() });
+                showToast("Task submitted for review!"); closeTaskModal();
+            } catch(e) { console.error(e); showToast("Upload failed", "error"); }
+            btn.innerHTML = "CONFIRM SUBMISSION"; btn.disabled = false;
         };
 
-        // --- IMAGE COMPRESSION ---
         function processImage(file) {
             return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
+                const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
+                    const img = new Image(); img.src = e.target.result;
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const maxW = 800; const scale = maxW / img.width;
-                        canvas.width = maxW; canvas.height = img.height * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+                        const scale = 800 / img.width; canvas.width = 800; canvas.height = img.height * scale;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
                 };
             });
