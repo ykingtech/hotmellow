@@ -125,6 +125,9 @@
                         <p id="detailEventLocation" class="text-slate-400 font-medium"><i class="fas fa-map-marker-alt mr-2 text-orange-500/80"></i>Location</p>
                         <div class="mt-4 flex flex-wrap gap-2" id="detailEventCrew"></div>
                     </div>
+                    <button onclick="copyClientPortalLink()" class="relative z-10 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition border border-slate-700 flex items-center gap-2 shadow-lg">
+                        <i class="fas fa-external-link-alt text-orange-500"></i> Copy Client Portal Link
+                    </button>
                 </div>
 
                 <!-- Missing Gear Reports -->
@@ -234,10 +237,16 @@
             <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Gear Item</h3><button onclick="closeModal('addInventoryModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
             <div class="p-6 space-y-4">
                 <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Item Name / Model</label><input type="text" id="newInvName" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
-                <div><label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Serial / ID Tag</label><input type="text" id="newInvTag" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-emerald-500"></div>
-                <button onclick="saveInventory()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mt-2 hover:bg-emerald-500">Save Item & Generate QR</button>
+                <p class="text-xs text-slate-500 italic mt-2"><i class="fas fa-info-circle mr-1"></i> A unique QR code will be auto-generated for this item.</p>
+                <button onclick="saveInventory()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mt-4 hover:bg-emerald-500">Save Item & Generate QR</button>
             </div>
         </div>
+    </div>
+
+    <!-- Image Viewer -->
+    <div id="imageViewerModal" class="hidden fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4">
+        <button onclick="closeModal('imageViewerModal')" class="absolute top-6 right-6 text-white text-3xl hover:text-rose-500 transition"><i class="fas fa-times"></i></button>
+        <img id="viewerImage" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-slate-800">
     </div>
 
     <script type="module">
@@ -321,7 +330,7 @@
             const el = document.getElementById(id); if (el) el.classList.add('hidden');
             if(id === 'addEventModal') { document.getElementById('newEventName').value=''; document.getElementById('newEventLocation').value=''; }
             if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value=''; document.getElementById('newTaskDesc').value=''; }
-            if(id === 'addInventoryModal') { document.getElementById('newInvName').value=''; document.getElementById('newInvTag').value=''; }
+            if(id === 'addInventoryModal') { document.getElementById('newInvName').value=''; }
         };
 
         // --- Core Data Loaders ---
@@ -402,8 +411,8 @@
             });
             const iDiv = document.getElementById('equipmentSelectionDiv'); iDiv.innerHTML = "";
             globalInventoryList.forEach(i => {
-                // Ensure we save ID and Name for the scanner
-                iDiv.innerHTML += `<label class="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-800 cursor-pointer hover:border-orange-500 transition"><input type="checkbox" value="${i.id}" data-name="${i.name}" class="eq-cb accent-orange-500"><span class="text-xs text-slate-300 truncate" title="${i.name}">${i.name}</span></label>`;
+                // Ensure we save TAG and Name for the scanner
+                iDiv.innerHTML += `<label class="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-800 cursor-pointer hover:border-orange-500 transition"><input type="checkbox" value="${i.tag}" data-name="${i.name}" class="eq-cb accent-orange-500"><span class="text-xs text-slate-300 truncate" title="${i.name}">${i.name}</span></label>`;
             });
             openModal('addEventModal');
         };
@@ -412,7 +421,7 @@
             const name = document.getElementById('newEventName').value, loc = document.getElementById('newEventLocation').value;
             if(!name) return alert("Enter event name.");
             const crewArray = Array.from(document.querySelectorAll('.crew-cb:checked')).map(cb => cb.value);
-            // Equipment is an array of objects: { id, name, status }
+            // Equipment is an array of objects: { id (which is now the tag), name, status }
             const eqArray = Array.from(document.querySelectorAll('.eq-cb:checked')).map(cb => ({ id: cb.value, name: cb.dataset.name, status: 'pending' }));
 
             document.getElementById('btnSaveEvent').disabled = true;
@@ -504,13 +513,15 @@
                     let proofHtml = '';
                     if(t.status !== 'new') {
                         let links = t.submittedLink ? `<a href="${t.submittedLink}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs block mb-3 font-medium"><i class="fas fa-external-link-alt mr-1.5"></i>${t.submittedLink}</a>` : '';
+                        let imgs = (t.photos || []).map(p => `<img src="${p}" onclick="viewImage('${p}')" class="w-12 h-12 object-cover rounded-lg cursor-pointer border border-slate-700 hover:border-orange-500 transition">`).join('');
+                        
                         let actionBtn = t.status === 'pending_approval' 
                             ? `<button onclick="approveTask('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] tracking-wider uppercase font-bold py-2.5 rounded-lg mt-3 shadow-lg transition">Approve Deliverable</button>`
                             : `<div class="mt-3 text-emerald-400 text-xs font-bold text-center bg-emerald-500/5 py-2 rounded-lg border border-emerald-500/20"><i class="fas fa-check-circle mr-1.5"></i> Approved</div>`;
 
                         proofHtml = `<div class="mt-4 p-4 bg-slate-950/50 rounded-xl border border-slate-800/80">
                                         <p class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-3">Submitted Evidence</p>
-                                        ${links}${actionBtn}
+                                        ${links}<div class="flex gap-2">${imgs}</div>${actionBtn}
                                      </div>`;
                     }
 
@@ -596,17 +607,17 @@
                         </div>`;
                 });
 
-                // Render high-res QR codes
+                // Render high-res QR codes using the auto-generated TAG
                 items.forEach(i => {
                     const qrContainer = document.getElementById(`qr-${i.id}`);
                     if(qrContainer) {
                         new QRCode(qrContainer, {
-                            text: i.id, // Using Firebase Doc ID as the QR data
-                            width: 256, // High resolution for printing
+                            text: i.tag, // Using auto-generated clean TAG for QR data
+                            width: 256, 
                             height: 256,
                             colorDark : "#020617",
                             colorLight : "#ffffff",
-                            correctLevel : QRCode.CorrectLevel.H // Better error correction
+                            correctLevel : QRCode.CorrectLevel.H
                         });
                     }
                 });
@@ -614,10 +625,14 @@
         }
 
         window.saveInventory = async () => {
-            const name = document.getElementById('newInvName').value, tag = document.getElementById('newInvTag').value;
+            const name = document.getElementById('newInvName').value;
             if(!name) return;
+            
+            // Auto generate a clean, unique ID tag (e.g. GEAR-4X9B)
+            const autoTag = 'GEAR-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+            
             try { 
-                await addDoc(collection(db, "inventory"), { name, tag, addedAt: serverTimestamp() }); 
+                await addDoc(collection(db, "inventory"), { name: name, tag: autoTag, addedAt: serverTimestamp() }); 
                 closeModal('addInventoryModal'); 
                 loadInventory(); 
             } 
