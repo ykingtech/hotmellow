@@ -24,16 +24,16 @@
             <img src="logo.png" alt="Hotmello Productions" class="h-8 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" onerror="this.outerHTML='<h1 class=\'font-black text-orange-500 text-xl tracking-widest\'>HOTMELLO</h1>'">
         </div>
         <nav class="flex-1 p-4 space-y-2 mt-4">
-            <button onclick="switchAdminView('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-orange-600/10 text-orange-500 font-bold transition">
+            <button onclick="switchAdminView('dashboardView')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-orange-600/10 text-orange-500 font-bold transition">
                 <i class="fas fa-chart-pie w-5"></i> Dashboard
             </button>
-            <button onclick="switchAdminView('events')" id="nav-events" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
+            <button onclick="switchAdminView('eventsView')" id="nav-events" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
                 <i class="fas fa-calendar-alt w-5"></i> Events Mgmt
             </button>
-            <button onclick="switchAdminView('crew')" id="nav-crew" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
+            <button onclick="switchAdminView('crewView')" id="nav-crew" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
                 <i class="fas fa-users w-5"></i> Crew & Payroll
             </button>
-            <button onclick="switchAdminView('inventory')" id="nav-inventory" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
+            <button onclick="switchAdminView('inventoryView')" id="nav-inventory" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white">
                 <i class="fas fa-boxes w-5"></i> Gear Inventory
             </button>
         </nav>
@@ -99,7 +99,7 @@
 
             <!-- Single Event Details View -->
             <div id="eventDetailsView" class="hidden space-y-6 animate-fade-in">
-                <button onclick="switchAdminView('events')" class="text-slate-400 hover:text-white flex items-center gap-2 mb-2 transition text-sm font-medium">
+                <button onclick="switchAdminView('eventsView')" class="text-slate-400 hover:text-white flex items-center gap-2 mb-2 transition text-sm font-medium">
                     <i class="fas fa-arrow-left"></i> All Events
                 </button>
                 
@@ -183,8 +183,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add Task, Add Crew, Add Inventory (Simplified HTML structure to save space) -->
-    <!-- Add Task -->
+    <!-- Modal: Add Task -->
     <div id="addTaskModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Assign Task</h3><button onclick="closeModal('addTaskModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
@@ -196,7 +195,7 @@
         </div>
     </div>
     
-    <!-- Add Crew -->
+    <!-- Modal: Add Crew -->
     <div id="addCrewModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Crew Member</h3><button onclick="closeModal('addCrewModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
@@ -208,7 +207,7 @@
         </div>
     </div>
 
-    <!-- Add Inventory -->
+    <!-- Modal: Add Inventory -->
     <div id="addInventoryModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div class="p-5 border-b border-slate-800 flex justify-between items-center"><h3 class="text-lg font-bold text-white">Add Gear</h3><button onclick="closeModal('addInventoryModal')" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button></div>
@@ -228,7 +227,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+        // Added 'where' to the imports to prevent query errors
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -244,41 +244,48 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        signInAnonymously(auth).catch(console.error);
-
         let activeEventId = null;
         let globalCrewList = [];
         let globalInventoryList = [];
 
         // UI Routing
         window.switchAdminView = (viewId) => {
-            ['dashboardView', 'eventsView', 'eventDetailsView', 'crewView', 'inventoryView'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            // Added null checks to prevent 'classList' of null errors
+            ['dashboardView', 'eventsView', 'eventDetailsView', 'crewView', 'inventoryView'].forEach(v => {
+                const el = document.getElementById(v);
+                if (el) el.classList.add('hidden');
+            });
+            
             ['dashboard', 'events', 'crew', 'inventory'].forEach(v => {
                 const btn = document.getElementById(`nav-${v}`);
-                if(btn) {
+                if (btn) {
                     btn.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 font-bold transition hover:bg-slate-800 hover:text-white";
                 }
             });
 
-            document.getElementById(viewId).classList.remove('hidden');
+            const targetView = document.getElementById(viewId);
+            if (targetView) targetView.classList.remove('hidden');
             
             let activeNav = viewId.replace('View', '');
             if(activeNav === 'eventDetails') activeNav = 'events';
+            
             const navBtn = document.getElementById(`nav-${activeNav}`);
-            if(navBtn) {
+            if (navBtn) {
                 const colors = { 'dashboard': 'orange', 'events': 'orange', 'crew': 'blue', 'inventory': 'emerald' };
                 const c = colors[activeNav];
                 navBtn.className = `w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-${c}-600/10 text-${c}-500 font-bold transition`;
             }
 
             const titles = { 'dashboardView': 'System Overview', 'eventsView': 'Events Management', 'crewView': 'Crew Directory', 'inventoryView': 'Gear Inventory' };
-            if(titles[viewId]) document.getElementById('topBarTitle').innerText = titles[viewId];
+            if (titles[viewId]) document.getElementById('topBarTitle').innerText = titles[viewId];
 
             const topActions = document.getElementById('topBarActions');
-            topActions.innerHTML = "";
-            if(viewId === 'eventsView') topActions.innerHTML = `<button onclick="prepareEventModal()" class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-plus"></i> New Event</button>`;
-            if(viewId === 'crewView') topActions.innerHTML = `<button onclick="openModal('addCrewModal')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Crew</button>`;
-            if(viewId === 'inventoryView') topActions.innerHTML = `<button onclick="openModal('addInventoryModal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-box-open"></i> Add Gear</button>`;
+            if (topActions) {
+                topActions.innerHTML = "";
+                if(viewId === 'eventsView') topActions.innerHTML = `<button onclick="prepareEventModal()" class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-plus"></i> New Event</button>`;
+                if(viewId === 'crewView') topActions.innerHTML = `<button onclick="openModal('addCrewModal')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-user-plus"></i> Add Crew</button>`;
+                if(viewId === 'inventoryView') topActions.innerHTML = `<button onclick="openModal('addInventoryModal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2"><i class="fas fa-box-open"></i> Add Gear</button>`;
+            }
 
             if(viewId === 'dashboardView') loadDashboard();
             if(viewId === 'eventsView') loadEvents();
@@ -286,13 +293,24 @@
             if(viewId === 'inventoryView') loadInventory();
         };
 
-        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.openModal = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        };
+        
         window.closeModal = (id) => {
-            document.getElementById(id).classList.add('hidden');
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
             if(id === 'addEventModal') { document.getElementById('newEventName').value=''; document.getElementById('newEventLocation').value=''; }
             if(id === 'addTaskModal') { document.getElementById('newTaskTitle').value=''; document.getElementById('newTaskDesc').value=''; }
         };
-        window.viewImage = (src) => { if(src) { document.getElementById('viewerImage').src = src; openModal('imageViewerModal'); } };
+        
+        window.viewImage = (src) => { 
+            if(src) { 
+                document.getElementById('viewerImage').src = src; 
+                openModal('imageViewerModal'); 
+            } 
+        };
 
         // --- Core Data Loaders ---
         async function fetchGlobalData() {
@@ -302,7 +320,9 @@
                 
                 const iSnap = await getDocs(collection(db, "inventory"));
                 globalInventoryList = []; iSnap.forEach(d => globalInventoryList.push({id: d.id, ...d.data()}));
-            } catch(e) { console.error("Global data fetch err", e); }
+            } catch(e) { 
+                console.error("Global data fetch err", e); 
+            }
         }
 
         // --- Dashboard ---
@@ -317,7 +337,6 @@
                 const sSnap = await getDocs(query(collection(db, "shift_logs"), orderBy("timestamp", "desc"), limit(5)));
                 let totalH = 0; let logRows = "";
                 
-                // Note: Getting total hours properly requires aggregating all logs, doing limited for demo
                 const allLogs = await getDocs(collection(db, "shift_logs"));
                 allLogs.forEach(d => totalH += (d.data().hours || 0));
                 document.getElementById('statHours').innerText = Math.round(totalH);
@@ -408,7 +427,6 @@
 
         window.copyClientPortalLink = () => {
             const link = `${window.location.origin}/client.html?event=${activeEventId}`;
-            // Simulating copy feature for demonstration
             alert(`Client Portal Link:\n\n${link}\n\n(In a real setup, this copies to clipboard & opens client view)`);
         }
 
@@ -533,8 +551,19 @@
             catch(e) { console.error(e); }
         }
 
-        // Init App Default View
-        switchAdminView('dashboardView');
+        // Initialize Auth BEFORE loading data to prevent permission issues
+        async function initializeAppAdmin() {
+            try {
+                await signInAnonymously(auth);
+            } catch (e) {
+                console.error("Auth init failed", e);
+            }
+            // Init App Default View after auth completes
+            switchAdminView('dashboardView');
+        }
+
+        // Start the application
+        initializeAppAdmin();
     </script>
 </body>
 </html>
