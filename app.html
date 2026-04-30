@@ -12,6 +12,9 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- HTML5 QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
     <style>
         body { -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
@@ -43,10 +46,10 @@
     <!-- Main Tabs -->
     <div id="mainTabs" class="flex border-b border-slate-800 bg-slate-900 hidden">
         <button onclick="switchTab('shift')" id="tab-shift" class="flex-1 py-3.5 text-center text-orange-400 border-b-2 border-orange-500 font-bold transition text-xs uppercase tracking-widest">
-            <i class="fas fa-clock mr-1"></i> Shift Log
+            <i class="fas fa-clock mr-1"></i> Shift
         </button>
         <button onclick="switchTab('equipment')" id="tab-equipment" class="flex-1 py-3.5 text-center text-slate-500 font-bold transition text-xs uppercase tracking-widest">
-            <i class="fas fa-camera mr-1"></i> Gear
+            <i class="fas fa-qrcode mr-1"></i> Gear Scan
         </button>
         <button onclick="switchTab('tasks')" id="tab-tasks" class="flex-1 py-3.5 text-center text-slate-500 font-bold transition text-xs uppercase tracking-widest">
             <i class="fas fa-tasks mr-1"></i> Tasks
@@ -109,7 +112,7 @@
 
                         <div class="flex flex-col">
                             <label class="text-[10px] text-rose-400 uppercase font-bold tracking-widest mb-2 block">Check-Out Photo</label>
-                            <label id="endBox" class="w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-not-allowed opacity-50 relative overflow-hidden transition-all">
+                            <label id="endBox" class="w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-not-allowed opacity-50 relative overflow-hidden transition-all bg-slate-900/50">
                                 <input type="file" id="endCameraInput" accept="image/*" capture="environment" class="hidden" disabled>
                                 <div id="endPlaceholder" class="flex flex-col items-center text-center p-2">
                                     <i class="fas fa-camera text-2xl text-slate-500 mb-2"></i>
@@ -147,15 +150,27 @@
                 </div>
             </div>
 
-            <!-- Tab 2: Equipment / Gear -->
+            <!-- Tab 2: Equipment / Gear Scanner -->
             <div id="equipmentSection" class="hidden">
                 <div class="glass-panel p-5 rounded-2xl shadow-xl mb-6">
-                    <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-clipboard-list text-orange-500"></i> Gear Checklist</h3>
-                    <p class="text-xs text-slate-400 mb-4 leading-relaxed">Ensure all equipment assigned to this event is checked in and checked out properly.</p>
+                    <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-qrcode text-emerald-500"></i> QR Gear Scanner</h3>
+                    <p class="text-xs text-slate-400 mb-6 leading-relaxed">Pack-up list: Scan QR codes on your equipment to check them back in.</p>
                     
-                    <div id="equipmentList" class="space-y-2">
+                    <!-- Scanner Container -->
+                    <div id="reader" class="w-full rounded-2xl overflow-hidden mb-4 border-2 border-emerald-500 hidden"></div>
+                    
+                    <button id="btnScanToggle" onclick="toggleScanner()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold tracking-wide shadow-[0_4px_14px_0_rgba(16,185,129,0.2)] transition flex justify-center items-center gap-2 mb-6">
+                        <i class="fas fa-camera"></i> Start Scanner
+                    </button>
+
+                    <h4 class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3 border-b border-slate-800 pb-2">Assigned Gear Checklist</h4>
+                    <div id="equipmentList" class="space-y-2 mb-6 max-h-60 overflow-y-auto">
                         <div class="text-center py-6 text-slate-500"><i class="fas fa-spinner fa-spin text-xl"></i></div>
                     </div>
+
+                    <button onclick="reportMissingGear()" class="w-full bg-transparent border border-rose-500/50 text-rose-400 hover:bg-rose-500/10 py-3.5 rounded-xl font-bold tracking-wide transition flex justify-center items-center gap-2">
+                        <i class="fas fa-exclamation-triangle"></i> Report Missing Gear
+                    </button>
                 </div>
             </div>
 
@@ -241,13 +256,15 @@
             projectId: "hotmellow-labs",
             storageBucket: "hotmellow-labs.firebasestorage.app",
             messagingSenderId: "435268267101",
-            appId: "1:435268267101:web:e8aefe8f7f20750dc831b4",
-            measurementId: "G-LW4LDFLJB6"
+            appId: "1:435268267101:web:e8aefe8f7f20750dc831b4"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+
+        // Global State for Event Equipment
+        let currentEventEquipment = [];
 
         // --- Custom UI Alerts ---
         window.showToast = (msg, type = 'success') => {
@@ -263,12 +280,8 @@
                 icon.className = "fas fa-check-circle text-lg";
             }
             
-            toast.style.opacity = '1';
-            toast.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, 0)';
-            }, 3000);
+            toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, -20px)';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translate(-50%, 0)'; }, 3000);
         };
 
         window.showConfirm = (msg) => {
@@ -281,46 +294,21 @@
             });
         };
 
-        // --- PWA ---
-        let deferredPrompt;
-        const installBtn = document.getElementById('installAppBtn');
-        if (window.matchMedia('(display-mode: standalone)').matches) { installBtn.classList.add('hidden'); }
-        window.addEventListener('beforeinstallprompt', (e) => { 
-            e.preventDefault(); deferredPrompt = e; 
-            if (!window.matchMedia('(display-mode: standalone)').matches) installBtn.classList.remove('hidden'); 
-        });
-        installBtn.addEventListener('click', async () => { 
-            if (deferredPrompt) { 
-                deferredPrompt.prompt(); 
-                const { outcome } = await deferredPrompt.userChoice; 
-                if (outcome === 'accepted') installBtn.classList.add('hidden'); 
-                deferredPrompt = null; 
-            } 
-        });
-
         // --- Navigation ---
         window.switchTab = (tab) => {
             ['shift', 'tasks', 'equipment'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
-                if(btn) {
-                    btn.classList.replace('text-orange-400', 'text-slate-500'); 
-                    btn.classList.remove('border-b-2', 'border-orange-500');
-                }
+                if(btn) { btn.classList.replace('text-orange-400', 'text-slate-500'); btn.classList.remove('border-b-2', 'border-orange-500'); }
                 const sec = document.getElementById(`${t}Section`);
                 if(sec) sec.classList.toggle('hidden', tab !== t);
             });
             const active = document.getElementById(`tab-${tab}`); 
-            if(active){
-                active.classList.replace('text-slate-500', 'text-orange-400'); 
-                active.classList.add('border-b-2', 'border-orange-500');
-            }
+            if(active){ active.classList.replace('text-slate-500', 'text-orange-400'); active.classList.add('border-b-2', 'border-orange-500'); }
         };
 
         window.resetEvent = async () => { 
             if(await showConfirm("Switch to a different event?")) { 
-                localStorage.removeItem('site_event_id'); 
-                localStorage.removeItem('site_event_name'); 
-                location.reload(); 
+                localStorage.removeItem('site_event_id'); localStorage.removeItem('site_event_name'); location.reload(); 
             } 
         };
 
@@ -368,10 +356,7 @@
 
         function renderEventList(list) {
             eventListDiv.innerHTML = "";
-            if(list.length === 0) { 
-                eventListDiv.innerHTML = '<div class="text-slate-500 text-center text-sm p-6 border border-dashed border-slate-700 rounded-xl">No active events found.</div>'; 
-                return; 
-            }
+            if(list.length === 0) { eventListDiv.innerHTML = '<div class="text-slate-500 text-center text-sm p-6 border border-dashed border-slate-700 rounded-xl">No active events found.</div>'; return; }
             list.forEach(p => {
                 const el = document.createElement('div');
                 el.className = "bg-slate-900/80 p-5 rounded-2xl border border-slate-800 flex justify-between items-center hover:border-orange-500/50 transition cursor-pointer shadow-sm group";
@@ -383,9 +368,7 @@
 
         async function selectEvent(eid, ename) {
             if(await showConfirm(`Connect to ${ename}?`)) {
-                localStorage.setItem('site_event_id', eid);
-                localStorage.setItem('site_event_name', ename);
-                location.reload();
+                localStorage.setItem('site_event_id', eid); localStorage.setItem('site_event_name', ename); location.reload();
             }
         }
 
@@ -394,7 +377,7 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const crew = data.assignedCrew || [];
-                    const equipment = data.equipment || [];
+                    currentEventEquipment = data.equipment || [];
                     
                     const currentVal = crewSelect.value;
                     crewSelect.innerHTML = '<option value="">Choose identity...</option>';
@@ -404,15 +387,86 @@
                     });
                     if(currentVal) crewSelect.value = currentVal;
                     
-                    renderEquipmentList(eid, equipment);
+                    renderEquipmentList(currentEventEquipment);
                 }
             });
             loadShiftHistory(eid);
             loadTasks(eid);
         }
 
-        // --- Equipment Tracker ---
-        function renderEquipmentList(eventId, items) {
+        // --- Equipment QR Scanner ---
+        let html5QrCode;
+        window.toggleScanner = () => {
+            const reader = document.getElementById('reader');
+            const btn = document.getElementById('btnScanToggle');
+            
+            if (reader.classList.contains('hidden')) {
+                reader.classList.remove('hidden');
+                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => handleScan(decodedText),
+                    (errorMessage) => { /* Ignore background scan errors */ }
+                ).catch(err => {
+                    showToast("Camera access denied or error.", "error");
+                    reader.classList.add('hidden');
+                });
+                btn.innerHTML = '<i class="fas fa-stop"></i> Stop Scanner';
+                btn.classList.replace('bg-emerald-600', 'bg-rose-600');
+                btn.classList.replace('hover:bg-emerald-500', 'hover:bg-rose-500');
+            } else {
+                if(html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        reader.classList.add('hidden');
+                        btn.innerHTML = '<i class="fas fa-camera"></i> Start Scanner';
+                        btn.classList.replace('bg-rose-600', 'bg-emerald-600');
+                        btn.classList.replace('hover:bg-rose-500', 'hover:bg-emerald-500');
+                    });
+                }
+            }
+        };
+
+        let lastScannedId = null;
+        let lastScanTime = 0;
+        
+        async function handleScan(qrText) {
+            // Prevent multiple rapid reads of the same code
+            if (qrText === lastScannedId && (Date.now() - lastScanTime) < 3000) return;
+            lastScannedId = qrText;
+            lastScanTime = Date.now();
+
+            const eid = localStorage.getItem('site_event_id');
+            const itemIndex = currentEventEquipment.findIndex(e => e.id === qrText);
+            
+            if (itemIndex > -1) {
+                if (currentEventEquipment[itemIndex].status === 'checked') {
+                    showToast("Item already checked!", "success");
+                    return;
+                }
+                
+                const updatedEq = [...currentEventEquipment];
+                updatedEq[itemIndex].status = 'checked';
+                
+                try {
+                    // Quick beep audio trick for user feedback
+                    const actx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = actx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 800;
+                    osc.connect(actx.destination); osc.start(); setTimeout(() => osc.stop(), 150);
+
+                    await updateDoc(doc(db, "events", eid), { equipment: updatedEq });
+                    showToast(`Scanned: ${updatedEq[itemIndex].name}`, "success");
+                } catch(e) {
+                    console.error(e);
+                    showToast("Error updating status", "error");
+                }
+            } else {
+                showToast("Item not assigned to this event!", "error");
+            }
+        }
+
+        function renderEquipmentList(items) {
             const list = document.getElementById('equipmentList');
             if(!items || items.length === 0) {
                 list.innerHTML = `<div class="text-center py-6 text-slate-500 text-sm border border-dashed border-slate-700 rounded-xl">No gear assigned to this event.</div>`;
@@ -423,29 +477,57 @@
             items.forEach((item, index) => {
                 const isChecked = item.status === 'checked';
                 const el = document.createElement('div');
-                el.className = `flex justify-between items-center p-4 rounded-xl border transition cursor-pointer ${isChecked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}`;
-                el.onclick = () => toggleEquipment(eventId, items, index);
+                el.className = `flex justify-between items-center p-4 rounded-xl border transition ${isChecked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}`;
+                // Fallback manual toggle if QR is lost
+                el.onclick = () => manualToggleEquipment(items, index);
                 
                 el.innerHTML = `
                     <div class="flex items-center gap-3">
                         <div class="w-6 h-6 rounded-md border ${isChecked ? 'bg-emerald-500 border-emerald-500 text-slate-900 flex items-center justify-center' : 'border-slate-600 bg-slate-800'} transition">
                             ${isChecked ? '<i class="fas fa-check text-xs"></i>' : ''}
                         </div>
-                        <span class="font-medium text-sm ${isChecked ? 'text-emerald-400 line-through opacity-70' : 'text-white'}">${item.name}</span>
+                        <span class="font-medium text-sm ${isChecked ? 'text-emerald-400 opacity-70' : 'text-white'}">${item.name}</span>
                     </div>
-                    <i class="fas fa-box text-slate-600 text-sm"></i>
+                    <i class="fas ${isChecked ? 'fa-check-circle text-emerald-500' : 'fa-qrcode text-slate-600'} text-sm"></i>
                 `;
                 list.appendChild(el);
             });
         }
 
-        async function toggleEquipment(eventId, currentItems, index) {
-            const itemsCopy = [...currentItems];
-            itemsCopy[index].status = itemsCopy[index].status === 'checked' ? 'pending' : 'checked';
-            try {
-                await updateDoc(doc(db, "events", eventId), { equipment: itemsCopy });
-            } catch(e) { console.error("Update equipment error", e); }
-        }
+        window.manualToggleEquipment = async (currentItems, index) => {
+            if(await showConfirm(`Manually mark "${currentItems[index].name}" as checked without scanning?`)) {
+                const eid = localStorage.getItem('site_event_id');
+                const itemsCopy = [...currentItems];
+                itemsCopy[index].status = itemsCopy[index].status === 'checked' ? 'pending' : 'checked';
+                try { await updateDoc(doc(db, "events", eid), { equipment: itemsCopy }); } 
+                catch(e) { showToast("Update failed", "error"); }
+            }
+        };
+
+        window.reportMissingGear = async () => {
+            const missing = currentEventEquipment.filter(e => e.status === 'pending');
+            if (missing.length === 0) {
+                showToast("All gear accounted for! Excellent.", "success");
+                return;
+            }
+            
+            const crewName = crewSelect.value || "An unknown crew member";
+            if (await showConfirm(`${missing.length} items are missing. Report to Admin?`)) {
+                try {
+                    await addDoc(collection(db, "missing_reports"), {
+                        eventId: localStorage.getItem('site_event_id'),
+                        eventName: localStorage.getItem('site_event_name'),
+                        reportedBy: crewName,
+                        missingItems: missing,
+                        reportedAt: serverTimestamp()
+                    });
+                    showToast("Missing report sent to Admin!", "success");
+                } catch (e) {
+                    console.error(e);
+                    showToast("Failed to send report", "error");
+                }
+            }
+        };
 
         // --- Shift Log ---
         function getActiveLogs() { return JSON.parse(localStorage.getItem('site_active_logs') || '{}'); }
@@ -453,7 +535,6 @@
         function removeLogState(cName) { let logs = getActiveLogs(); delete logs[cName]; localStorage.setItem('site_active_logs', JSON.stringify(logs)); }
 
         let currentStartImg = null, currentEndImg = null, currentStartTime = null, currentEndTime = null;
-
         crewSelect.addEventListener('change', updateUIForCrew);
 
         function updateUIForCrew() {
@@ -463,9 +544,7 @@
             const resetBtn = document.getElementById('resetLogBtn'), uploadBtn = document.getElementById('uploadBtn');
             
             ['start', 'end'].forEach(pref => {
-                document.getElementById(`${pref}Preview`).classList.add('hidden');
-                document.getElementById(`${pref}Placeholder`).classList.remove('hidden');
-                document.getElementById(`${pref}TimeBadge`).classList.add('hidden');
+                document.getElementById(`${pref}Preview`).classList.add('hidden'); document.getElementById(`${pref}Placeholder`).classList.remove('hidden'); document.getElementById(`${pref}TimeBadge`).classList.add('hidden');
             });
             
             startBox.className = "w-full aspect-square border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800/50 relative overflow-hidden transition-all";
@@ -477,27 +556,18 @@
             if(!cName) { startInput.disabled = true; endInput.disabled = true; return; }
 
             const logData = getActiveLogs()[cName];
-
             if(logData) {
-                currentStartTime = new Date(logData.startTime);
-                currentStartImg = logData.startImg;
-                
-                document.getElementById('startPreview').src = currentStartImg;
-                document.getElementById('startPreview').classList.remove('hidden');
+                currentStartTime = new Date(logData.startTime); currentStartImg = logData.startImg;
+                document.getElementById('startPreview').src = currentStartImg; document.getElementById('startPreview').classList.remove('hidden');
                 document.getElementById('startPlaceholder').classList.add('hidden');
-                document.getElementById('startTimeBadge').innerText = currentStartTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                document.getElementById('startTimeBadge').classList.remove('hidden');
+                document.getElementById('startTimeBadge').innerText = currentStartTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); document.getElementById('startTimeBadge').classList.remove('hidden');
                 startBox.classList.add('border-emerald-500', 'bg-emerald-500/5');
-                
                 startInput.disabled = true; endInput.disabled = false;
-                endBox.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-900/50');
-                endBox.classList.add('cursor-pointer', 'hover:bg-slate-800/50');
+                endBox.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-900/50'); endBox.classList.add('cursor-pointer', 'hover:bg-slate-800/50');
                 resetBtn.classList.remove('hidden');
             } else {
-                startInput.disabled = false; endInput.disabled = true;
-                resetBtn.classList.add('hidden');
+                startInput.disabled = false; endInput.disabled = true; resetBtn.classList.add('hidden');
             }
-            
             uploadBtn.disabled = true;
             uploadBtn.className = "relative z-10 w-full bg-slate-800 text-slate-500 py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition shadow-lg disabled:cursor-not-allowed flex justify-center items-center gap-2 active:scale-[0.98]";
         }
@@ -506,52 +576,32 @@
             if(!crewSelect.value || !e.target.files[0]) return;
             const b64 = await processImage(e.target.files[0]);
             saveLogState(crewSelect.value, { startTime: new Date().getTime(), startImg: b64 });
-            updateUIForCrew();
-            showToast('Checked in successfully!');
+            updateUIForCrew(); showToast('Checked in successfully!');
         });
 
         document.getElementById('endCameraInput').addEventListener('change', async (e) => {
             if(!e.target.files[0]) return;
-            currentEndImg = await processImage(e.target.files[0]);
-            currentEndTime = new Date();
-            
-            document.getElementById('endPreview').src = currentEndImg;
-            document.getElementById('endPreview').classList.remove('hidden');
+            currentEndImg = await processImage(e.target.files[0]); currentEndTime = new Date();
+            document.getElementById('endPreview').src = currentEndImg; document.getElementById('endPreview').classList.remove('hidden');
             document.getElementById('endPlaceholder').classList.add('hidden');
-            document.getElementById('endTimeBadge').innerText = currentEndTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            document.getElementById('endTimeBadge').classList.remove('hidden');
+            document.getElementById('endTimeBadge').innerText = currentEndTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); document.getElementById('endTimeBadge').classList.remove('hidden');
             document.getElementById('endBox').classList.add('border-rose-500', 'bg-rose-500/5');
-
-            const hours = (currentEndTime - currentStartTime) / (1000 * 60 * 60);
-            document.getElementById('shiftHours').value = hours.toFixed(1);
-
+            const hours = (currentEndTime - currentStartTime) / (1000 * 60 * 60); document.getElementById('shiftHours').value = hours.toFixed(1);
             const btn = document.getElementById('uploadBtn');
-            btn.disabled = false; 
-            btn.classList.replace('bg-slate-800', 'bg-orange-600'); 
-            btn.classList.replace('text-slate-500', 'text-white');
-            btn.classList.add('shadow-[0_4px_15px_rgba(234,88,12,0.4)]');
+            btn.disabled = false; btn.classList.replace('bg-slate-800', 'bg-orange-600'); btn.classList.replace('text-slate-500', 'text-white'); btn.classList.add('shadow-[0_4px_15px_rgba(234,88,12,0.4)]');
             showToast('Checked out! Ready to submit.');
         });
 
-        window.clearShiftLog = async () => {
-            if(await showConfirm(`Reset current session for ${crewSelect.value}?`)) {
-                removeLogState(crewSelect.value); updateUIForCrew();
-            }
-        }
+        window.clearShiftLog = async () => { if(await showConfirm(`Reset current session for ${crewSelect.value}?`)) { removeLogState(crewSelect.value); updateUIForCrew(); } }
 
         document.getElementById('uploadBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('uploadBtn');
-            const cName = crewSelect.value, hours = document.getElementById('shiftHours').value, expenses = document.getElementById('shiftExpenses').value;
+            const btn = document.getElementById('uploadBtn'), cName = crewSelect.value, hours = document.getElementById('shiftHours').value, expenses = document.getElementById('shiftExpenses').value;
             if(!cName || !currentStartImg || !currentEndImg || !hours) return showToast("Incomplete log data.", "error");
-            
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Submitting...'; btn.disabled = true;
             try {
                 await addDoc(collection(db, "shift_logs"), {
-                    eventId: localStorage.getItem('site_event_id'), 
-                    eventName: localStorage.getItem('site_event_name'), 
-                    crewName: cName, setupPhoto: currentStartImg, packupPhoto: currentEndImg,
-                    startTime: currentStartTime, endTime: currentEndTime, timestamp: serverTimestamp(), 
-                    status: "pending", hours: parseFloat(hours), expenses: expenses ? parseFloat(expenses) : 0
+                    eventId: localStorage.getItem('site_event_id'), eventName: localStorage.getItem('site_event_name'), crewName: cName, setupPhoto: currentStartImg, packupPhoto: currentEndImg,
+                    startTime: currentStartTime, endTime: currentEndTime, timestamp: serverTimestamp(), status: "pending", hours: parseFloat(hours), expenses: expenses ? parseFloat(expenses) : 0
                 });
                 removeLogState(cName); showToast("Shift log submitted!"); updateUIForCrew();
             } catch(e) { console.error(e); showToast("Failed to submit", "error"); btn.disabled = false; }
@@ -562,7 +612,6 @@
             onSnapshot(query(collection(db, "shift_logs"), where("eventId", "==", eid), orderBy("timestamp", "desc"), limit(10)), (snap) => {
                 const list = document.getElementById('historyList'); list.innerHTML = "";
                 if(snap.empty) { list.innerHTML = `<div class="text-center py-4 text-xs text-slate-600">No recent activity.</div>`; return; }
-                
                 snap.forEach(d => {
                     const data = d.data();
                     const statusConfig = data.status === 'approved' ? { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: 'fa-check-circle' } : { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: 'fa-clock' };
@@ -573,14 +622,8 @@
                             <div class="absolute bottom-0 w-full bg-slate-950/80 text-[8px] text-center font-bold text-slate-300 py-0.5 border-t border-slate-700">IN</div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-start mb-1">
-                                <h4 class="font-bold text-white text-sm truncate pr-2">${data.crewName}</h4>
-                                <span class="text-[9px] border px-2 py-0.5 rounded uppercase font-bold flex items-center gap-1 ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}"><i class="fas ${statusConfig.icon}"></i> ${data.status}</span>
-                            </div>
-                            <div class="flex items-center gap-3 text-xs text-slate-400 mt-2 font-medium">
-                                <span class="flex items-center gap-1"><i class="fas fa-hourglass-half text-slate-500"></i> ${data.hours}h</span>
-                                ${data.expenses ? `<span class="flex items-center gap-1"><i class="fas fa-coins text-slate-500"></i> Rs.${data.expenses.toLocaleString()}</span>` : ''}
-                            </div>
+                            <div class="flex justify-between items-start mb-1"><h4 class="font-bold text-white text-sm truncate pr-2">${data.crewName}</h4><span class="text-[9px] border px-2 py-0.5 rounded uppercase font-bold flex items-center gap-1 ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}"><i class="fas ${statusConfig.icon}"></i> ${data.status}</span></div>
+                            <div class="flex items-center gap-3 text-xs text-slate-400 mt-2 font-medium"><span class="flex items-center gap-1"><i class="fas fa-hourglass-half text-slate-500"></i> ${data.hours}h</span>${data.expenses ? `<span class="flex items-center gap-1"><i class="fas fa-coins text-slate-500"></i> Rs.${data.expenses.toLocaleString()}</span>` : ''}</div>
                         </div>
                     </div>`;
                 });
